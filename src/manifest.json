@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Salesforce AI Assistant",
+  "name": "Trailblazer AI",
   "version": "1.0.0",
-  "description": "AI-powered assistant for Salesforce workflows and troubleshooting",
+  "description": "Professional AI assistant for Salesforce administrators, developers, and users",
   "permissions": [
     "activeTab",
     "storage",
@@ -29,7 +29,12 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Salesforce AI Assistant"
+    "default_title": "Trailblazer AI - Your Salesforce Copilot"
   },
-  "options_page": "options.html"
+  "options_page": "options.html",
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
 }

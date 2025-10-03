@@ -16,20 +16,34 @@
       align-items: center;
       margin-bottom: 16px;
       padding-bottom: 12px;
-      border-bottom: 1px solid #e5e5e5;
+      border-bottom: 2px solid #0176d3;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e8f4fd 100%);
+      border-radius: 8px 8px 0 0;
+      padding: 12px;
+      margin: -16px -16px 16px -16px;
     }
     
     .logo {
-      width: 24px;
-      height: 24px;
-      background: #0176d3;
-      border-radius: 4px;
-      margin-right: 8px;
+      width: 32px;
+      height: 32px;
+      background: url('icons/icon48.png') no-repeat center;
+      background-size: contain;
+      margin-right: 12px;
+      flex-shrink: 0;
     }
     
     .title {
-      font-weight: 600;
-      color: #181818;
+      font-weight: 700;
+      color: #0176d3;
+      font-size: 16px;
+      line-height: 1.2;
+    }
+    
+    .subtitle {
+      font-size: 11px;
+      color: #666;
+      font-weight: 400;
+      margin-top: 2px;
     }
     
     .context-info {
@@ -234,7 +248,8 @@
 <body>
   <div class="header">
     <div class="logo"></div>
-    <div class="title">SF AI Assistant</div>
+    <div class="title">Trailblazer AI</div>
+    <div class="subtitle">Your Salesforce Copilot</div>
   </div>
   
   <div class="context-info" id="contextInfo">

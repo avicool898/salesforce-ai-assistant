@@ -1,12 +1,12 @@
-# 🤖 Salesforce AI Assistant Chrome Extension
+# 🚀 Trailblazer AI - Professional Salesforce Copilot
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue.svg)](https://developer.chrome.com/docs/extensions/)
 [![Salesforce](https://img.shields.io/badge/Salesforce-Compatible-00a1e0.svg)](https://salesforce.com)
 
-An intelligent Chrome extension that acts as your personal AI assistant for Salesforce, providing contextual help, debugging suggestions, and workflow guidance powered by advanced AI models including Grok, GPT, and Claude.
+A professional AI copilot designed for Salesforce administrators, developers, and power users. Get intelligent contextual assistance, expert debugging guidance, and workflow optimization powered by advanced AI models including Grok, GPT, and Claude.
 
-![Salesforce AI Assistant Demo](https://via.placeholder.com/800x400/0176d3/ffffff?text=Salesforce+AI+Assistant+Demo)
+![Trailblazer AI Demo](https://via.placeholder.com/800x400/0176d3/ffffff?text=Trailblazer+AI+Demo)
 
 ## ✨ Features
 
@@ -43,8 +43,8 @@ An intelligent Chrome extension that acts as your personal AI assistant for Sale
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/yourusername/salesforce-ai-assistant.git
-   cd salesforce-ai-assistant
+   git clone https://github.com/avicool898/trailblazer-ai.git
+   cd trailblazer-ai
    ```
 
 2. **Load in Chrome**

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Icon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .icon-preview { margin: 20px 0; }
+        canvas { border: 1px solid #ccc; margin: 10px; }
+        button { padding: 10px 20px; margin: 5px; background: #0176d3; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #014486; }
+    </style>
+</head>
+<body>
+    <h1>Salesforce AI Assistant - Icon Generator</h1>
+    <p>This page converts SVG icons to PNG format for the Chrome extension.</p>
+    
+    <div class="icon-preview">
+        <h3>16x16 Icon</h3>
+        <canvas id="canvas16" width="16" height="16"></canvas>
+        <button onclick="downloadIcon(16)">Download 16x16 PNG</button>
+    </div>
+    
+    <div class="icon-preview">
+        <h3>48x48 Icon</h3>
+        <canvas id="canvas48" width="48" height="48"></canvas>
+        <button onclick="downloadIcon(48)">Download 48x48 PNG</button>
+    </div>
+    
+    <div class="icon-preview">
+        <h3>128x128 Icon</h3>
+        <canvas id="canvas128" width="128" height="128"></canvas>
+        <button onclick="downloadIcon(128)">Download 128x128 PNG</button>
+    </div>
+    
+    <button onclick="downloadAll()">Download All Icons</button>
+
+    <script>
+        // SVG data embedded directly
+        const svgData = {
+            16: `<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="grad16" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0176d3;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#014486;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <circle cx="8" cy="8" r="7.5" fill="url(#grad16)" stroke="#fff" stroke-width="1"/>
+                <g fill="#fff">
+                    <circle cx="8" cy="6" r="2.5" fill="none" stroke="#fff" stroke-width="0.8"/>
+                    <circle cx="5" cy="4" r="0.8"/>
+                    <circle cx="11" cy="4" r="0.8"/>
+                    <circle cx="4" cy="8" r="0.8"/>
+                    <circle cx="12" cy="8" r="0.8"/>
+                    <circle cx="6" cy="11" r="0.8"/>
+                    <circle cx="10" cy="11" r="0.8"/>
+                    <line x1="5.8" y1="4.8" x2="6.5" y2="5.5" stroke="#fff" stroke-width="0.5"/>
+                    <line x1="10.2" y1="4.8" x2="9.5" y2="5.5" stroke="#fff" stroke-width="0.5"/>
+                    <line x1="4.8" y1="7.2" x2="6" y2="6.8" stroke="#fff" stroke-width="0.5"/>
+                    <line x1="11.2" y1="7.2" x2="10" y2="6.8" stroke="#fff" stroke-width="0.5"/>
+                    <line x1="6.8" y1="10.2" x2="7.2" y2="8.5" stroke="#fff" stroke-width="0.5"/>
+                    <line x1="9.2" y1="10.2" x2="8.8" y2="8.5" stroke="#fff" stroke-width="0.5"/>
+                </g>
+                <text x="8" y="14" text-anchor="middle" font-family="Arial, sans-serif" font-size="3" font-weight="bold" fill="#fff">SF</text>
+            </svg>`,
+            
+            48: `<svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="grad48" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0176d3;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#0099e0;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#014486;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <circle cx="24" cy="24" r="22" fill="url(#grad48)"/>
+                <g fill="#fff" stroke="#fff">
+                    <circle cx="24" cy="20" r="6" fill="none" stroke="#fff" stroke-width="2"/>
+                    <circle cx="12" cy="12" r="2.5"/>
+                    <circle cx="36" cy="12" r="2.5"/>
+                    <circle cx="8" cy="24" r="2.5"/>
+                    <circle cx="40" cy="24" r="2.5"/>
+                    <circle cx="12" cy="36" r="2.5"/>
+                    <circle cx="36" cy="36" r="2.5"/>
+                    <circle cx="24" cy="8" r="2"/>
+                    <circle cx="24" cy="40" r="2"/>
+                    <line x1="14.5" y1="14.5" x2="19" y2="17" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
+                    <line x1="33.5" y1="14.5" x2="29" y2="17" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
+                    <line x1="10.5" y1="21.5" x2="18.5" y2="19" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
+                    <line x1="37.5" y1="21.5" x2="29.5" y2="19" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
+                    <line x1="14.5" y1="33.5" x2="20" y2="25" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
+                    <line x1="33.5" y1="33.5" x2="28" y2="25" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
+                    <line x1="24" y1="10" x2="24" y2="14" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
+                    <line x1="24" y1="38" x2="24" y2="26" stroke="#fff" stroke-width="1.5" opacity="0.8"/>
+                </g>
+                <text x="24" y="46" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#fff">SF AI</text>
+            </svg>`,
+            
+            128: `<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="grad128" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0176d3;stop-opacity:1" />
+                        <stop offset="25%" style="stop-color:#0099e0;stop-opacity:1" />
+                        <stop offset="75%" style="stop-color:#0066cc;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#014486;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+                <circle cx="64" cy="64" r="60" fill="url(#grad128)"/>
+                <g fill="#fff" stroke="#fff">
+                    <circle cx="64" cy="50" r="16" fill="none" stroke="#fff" stroke-width="3"/>
+                    <circle cx="58" cy="45" r="3" fill="#fff" opacity="0.8"/>
+                    <circle cx="70" cy="45" r="3" fill="#fff" opacity="0.8"/>
+                    <circle cx="64" cy="55" r="2" fill="#fff" opacity="0.8"/>
+                    <circle cx="32" cy="32" r="6"/>
+                    <circle cx="96" cy="32" r="6"/>
+                    <circle cx="20" cy="64" r="6"/>
+                    <circle cx="108" cy="64" r="6"/>
+                    <circle cx="32" cy="96" r="6"/>
+                    <circle cx="96" cy="96" r="6"/>
+                    <circle cx="64" cy="20" r="5"/>
+                    <circle cx="64" cy="108" r="5"/>
+                    <line x1="38" y1="38" x2="52" y2="44" stroke="#fff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="90" y1="38" x2="76" y2="44" stroke="#fff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="26" y1="58" x2="48" y2="52" stroke="#fff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="102" y1="58" x2="80" y2="52" stroke="#fff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="38" y1="90" x2="56" y2="66" stroke="#fff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="90" y1="90" x2="72" y2="66" stroke="#fff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="64" y1="25" x2="64" y2="34" stroke="#fff" stroke-width="2.5" opacity="0.9"/>
+                    <line x1="64" y1="103" x2="64" y2="66" stroke="#fff" stroke-width="2.5" opacity="0.9"/>
+                </g>
+                <text x="64" y="120" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="bold" fill="#fff">SF AI</text>
+            </svg>`
+        };
+
+        function svgToPng(svgString, size) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
+                const url = URL.createObjectURL(svgBlob);
+                
+                img.onload = function() {
+                    const canvas = document.getElementById(`canvas${size}`);
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, size, size);
+                    ctx.drawImage(img, 0, 0, size, size);
+                    URL.revokeObjectURL(url);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+                
+                img.src = url;
+            });
+        }
+
+        function downloadIcon(size) {
+            svgToPng(svgData[size], size).then(dataUrl => {
+                const link = document.createElement('a');
+                link.download = `icon${size}.png`;
+                link.href = dataUrl;
+                link.click();
+            });
+        }
+
+        function downloadAll() {
+            [16, 48, 128].forEach(size => {
+                setTimeout(() => downloadIcon(size), size * 10);
+            });
+        }
+
+        // Generate previews on load
+        window.onload = function() {
+            [16, 48, 128].forEach(size => {
+                svgToPng(svgData[size], size);
+            });
+        };
+    </script>
+</body>
+</html>

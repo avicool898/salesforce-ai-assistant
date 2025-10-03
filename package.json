@@ -1,17 +1,17 @@
 {
-  "name": "salesforce-ai-assistant",
+  "name": "trailblazer-ai",
   "version": "1.0.0",
-  "description": "AI-powered Chrome extension for Salesforce users providing contextual help and intelligent assistance",
+  "description": "Professional AI copilot for Salesforce administrators, developers, and users",
   "main": "src/manifest.json",
   "scripts": {
     "build": "echo 'No build process needed - Chrome extension ready to load'",
     "test": "echo 'Manual testing required - load extension in Chrome'",
     "lint": "echo 'Add ESLint configuration for code linting'",
-    "package": "zip -r salesforce-ai-assistant.zip src/ README.md LICENSE CHANGELOG.md"
+    "package": "zip -r trailblazer-ai.zip src/ README.md LICENSE CHANGELOG.md"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/YOUR_ACTUAL_USERNAME/salesforce-ai-assistant.git"
+    "url": "git+https://github.com/avicool898/trailblazer-ai.git"
   },
   "keywords": [
     "salesforce",
@@ -29,9 +29,9 @@
   "author": "Your Name <your.email@example.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/YOUR_ACTUAL_USERNAME/salesforce-ai-assistant/issues"
+    "url": "https://github.com/avicool898/trailblazer-ai/issues"
   },
-  "homepage": "https://github.com/YOUR_ACTUAL_USERNAME/salesforce-ai-assistant#readme",
+  "homepage": "https://github.com/avicool898/trailblazer-ai#readme",
   "engines": {
     "chrome": ">=88.0"
   },

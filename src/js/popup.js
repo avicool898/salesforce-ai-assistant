@@ -458,6 +458,42 @@ Need more specific help? Try describing your exact issue or what you're trying t
       }
     });
   }
+
+  // Test function to preview formatting (for development)
+  testFormatting() {
+    const sampleResponse = `### Building a Record-Triggered Flow to Update Lead Rating
+
+You're in **Salesforce Flow Builder** (Lightning Experience), which is perfect for creating this automation. Since no object is detected yet, we'll start by configuring a new record-triggered flow on the \`Lead\` object.
+
+#### Step-by-Step Instructions
+
+1. **Configure the Flow Trigger (Start Element)**:
+   - In the visible fields, select the **radio button for "A record is created"** under the trigger options
+   - For the \`Object\` field: Enter or select **Lead**
+   - Check the **Fast Field Updates** radio button to enable before-save processing
+
+2. **Add an Update Records Element**:
+   - From Available Actions, click **Add element**
+   - Search for and select **Update Records**
+   - Map the \`Rating\` field to the value **"Warm"**
+
+3. **Save and Test the Flow**:
+   - Click **Save** and name it "Update New Lead Rating to Warm"
+   - Use **Debug** to test with a sample Lead
+   - Click **Activate** to enable it
+
+#### Key Benefits
+- Runs synchronously before the Lead saves
+- No Apex code required
+- High performance with Fast Field Updates
+
+#### Relevant Documentation
+- [Record-Triggered Flows Overview](https://help.salesforce.com/s/articleView?id=sf.flow_ref_elements_triggers_record.htm&type=5)
+- [Update Records Element](https://help.salesforce.com/s/articleView?id=sf.flow_ref_elements_data_update.htm&type=5)
+- [Lead Object Reference](https://help.salesforce.com/s/articleView?id=sf.leads_fields.htm&type=5)`;
+
+    this.showResponse(sampleResponse);
+  }
 }
 
 // Initialize popup when DOM is loaded
