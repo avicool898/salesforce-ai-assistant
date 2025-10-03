@@ -47,9 +47,48 @@ class SalesforceAssistantPopup {
   }
 
   displayContext(context) {
-    const contextText = `📍 ${context.pageType}${context.currentObject ? ` - ${context.currentObject}` : ''}
+    let contextText = `📍 ${context.pageType}${context.currentObject ? ` - ${context.currentObject}` : ''}
 🖥️ ${context.userInterface} Experience
 ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected` : '✅ No errors detected'}`;
+
+    // Add enhanced context if available
+    if (context.urlMetadata) {
+      const meta = context.urlMetadata;
+      if (meta.action && meta.action !== 'view') {
+        contextText += `\n🎯 Action: ${meta.action.charAt(0).toUpperCase() + meta.action.slice(1)}`;
+      }
+      if (meta.recordId) {
+        contextText += `\n🆔 Record: ${meta.recordId.substring(0, 8)}...`;
+      }
+      if (meta.app && meta.app !== 'Standard') {
+        contextText += `\n📱 App: ${meta.app}`;
+      }
+    }
+
+    // Add user activity hints
+    if (context.userActivity) {
+      const activity = context.userActivity;
+      if (activity.visibleModals?.length > 0) {
+        contextText += `\n💬 ${activity.visibleModals.length} modal(s) open`;
+      }
+      if (activity.formState?.length > 0) {
+        const avgCompletion = activity.formState.reduce((sum, form) => sum + parseFloat(form.completionRate), 0) / activity.formState.length;
+        if (avgCompletion > 0) {
+          contextText += `\n📝 Form ${avgCompletion.toFixed(0)}% complete`;
+        }
+      }
+    }
+
+    // Add org/user context
+    if (context.salesforceMetadata) {
+      const meta = context.salesforceMetadata;
+      if (meta.orgInfo?.name) {
+        contextText += `\n🏢 Org: ${meta.orgInfo.name}`;
+      }
+      if (meta.permissions?.readOnly) {
+        contextText += `\n🔒 Read-only access`;
+      }
+    }
 
     this.contextInfo.textContent = contextText;
   }
@@ -108,41 +147,111 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
   buildAIPrompt(userPrompt, contextData) {
     const context = contextData?.context || {};
     const content = contextData?.content || {};
+    const storage = contextData?.storage || {};
+    const enhanced = contextData?.enhanced || false;
 
-    return `You are a Salesforce expert assistant. Help the user with their Salesforce question.
+    let prompt = `You are Salesforce Advisor, an expert AI assistant. Help the user with their Salesforce question using the rich context provided.
 
 CURRENT CONTEXT:
 - Page Type: ${context.pageType || 'Unknown'}
 - Object: ${context.currentObject || 'Not detected'}
 - Interface: ${context.userInterface || 'Unknown'}
 - URL: ${context.url || 'Not available'}
-- Errors: ${context.errors?.length || 0} detected
+- Errors: ${context.errors?.length || 0} detected`;
 
-${context.errors?.length > 0 ? `
+    // Add enhanced URL metadata if available
+    if (enhanced && context.urlMetadata) {
+      const meta = context.urlMetadata;
+      prompt += `
+
+ADVANCED URL ANALYSIS:
+- Action: ${meta.action || 'view'}
+- Record ID: ${meta.recordId || 'None'}
+- Object Type: ${meta.objectType || 'Unknown'}
+- Mode: ${meta.mode || 'view'}
+- App Context: ${meta.app || 'Standard'}
+- Is Setup: ${meta.isSetup ? 'Yes' : 'No'}`;
+    }
+
+    // Add user activity context
+    if (enhanced && context.userActivity) {
+      const activity = context.userActivity;
+      prompt += `
+
+USER ACTIVITY:
+- Focused Element: ${activity.focusedElement?.tagName || 'None'}
+- Open Modals: ${activity.visibleModals?.length || 0}
+- Form Completion: ${activity.formState?.map(f => `${f.completionRate}%`).join(', ') || 'N/A'}`;
+    }
+
+    // Add Salesforce metadata
+    if (enhanced && context.salesforceMetadata) {
+      const meta = context.salesforceMetadata;
+      if (meta.orgInfo?.name) {
+        prompt += `\n- Organization: ${meta.orgInfo.name}`;
+      }
+      if (meta.userInfo?.name) {
+        prompt += `\n- User: ${meta.userInfo.name}`;
+      }
+      if (meta.permissions) {
+        prompt += `\n- Permissions: ${meta.permissions.hasEditAccess ? 'Edit' : 'Read-only'}`;
+      }
+    }
+
+    // Add recent activity
+    if (enhanced && context.recentActivity?.length > 0) {
+      prompt += `
+
+RECENT ACTIVITY:
+${context.recentActivity.slice(0, 5).map(item => `- ${item.type}: ${JSON.stringify(item.data).substring(0, 100)}`).join('\n')}`;
+    }
+
+    // Add detected errors
+    if (context.errors?.length > 0) {
+      prompt += `
+
 DETECTED ERRORS:
-${context.errors.map(err => `- ${err.type}: ${err.message}`).join('\n')}
-` : ''}
+${context.errors.map(err => `- ${err.type}: ${err.message}`).join('\n')}`;
+    }
 
-${content.fields?.length > 0 ? `
+    // Add form and field context
+    if (content.fields?.length > 0) {
+      prompt += `
+
 VISIBLE FIELDS:
-${content.fields.map(field => `- ${field.label} (${field.type}${field.required ? ', required' : ''})`).join('\n')}
-` : ''}
+${content.fields.map(field => `- ${field.label} (${field.type}${field.required ? ', required' : ''})`).join('\n')}`;
+    }
 
-${content.buttons?.length > 0 ? `
+    if (content.buttons?.length > 0) {
+      prompt += `
+
 AVAILABLE ACTIONS:
-${content.buttons.map(btn => `- ${btn.text}`).join('\n')}
-` : ''}
+${content.buttons.map(btn => `- ${btn.text}`).join('\n')}`;
+    }
+
+    // Add storage insights
+    if (enhanced && storage.recentItems?.length > 0) {
+      prompt += `
+
+RECENT ITEMS (from browser storage):
+${storage.recentItems.slice(0, 3).map(item => `- ${JSON.stringify(item).substring(0, 80)}`).join('\n')}`;
+    }
+
+    prompt += `
 
 USER QUESTION: ${userPrompt}
 
 Please provide a helpful, specific response that:
-1. Addresses their question directly
-2. Takes into account the current Salesforce context
-3. Suggests specific next steps if applicable
+1. Addresses their question directly using the rich context provided
+2. Takes into account the current Salesforce context, user activity, and recent history
+3. Suggests specific next steps based on their current page and permissions
 4. Includes relevant Salesforce documentation links when helpful
-5. Keeps the response concise but actionable
+5. Considers their recent activity and form state for personalized guidance
+6. Keeps the response well-structured and actionable
 
 Response:`;
+
+    return prompt;
   }
 
   async callAI(prompt) {
