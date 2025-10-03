@@ -1,12 +1,12 @@
-# 🚀 Trailblazer AI - Professional Salesforce Copilot
+# 🏢 Salesforce Advisor - Your Intelligent Salesforce Copilot
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Chrome Extension](https://img.shields.io/badge/Chrome-Extension-blue.svg)](https://developer.chrome.com/docs/extensions/)
 [![Salesforce](https://img.shields.io/badge/Salesforce-Compatible-00a1e0.svg)](https://salesforce.com)
 
-A professional AI copilot designed for Salesforce administrators, developers, and power users. Get intelligent contextual assistance, expert debugging guidance, and workflow optimization powered by advanced AI models including Grok, GPT, and Claude.
+An enterprise-grade AI copilot designed for Salesforce professionals. Get intelligent contextual assistance, expert debugging guidance, and workflow optimization powered by advanced AI models including Grok, GPT, and Claude.
 
-![Trailblazer AI Demo](https://via.placeholder.com/800x400/0176d3/ffffff?text=Trailblazer+AI+Demo)
+![Salesforce Advisor Demo](https://via.placeholder.com/800x400/0176d3/ffffff?text=Salesforce+Advisor+Demo)
 
 ## ✨ Features
 
@@ -43,8 +43,8 @@ A professional AI copilot designed for Salesforce administrators, developers, an
 
 1. **Clone the Repository**
    ```bash
-   git clone https://github.com/avicool898/trailblazer-ai.git
-   cd trailblazer-ai
+   git clone https://github.com/avicool898/salesforce-advisor.git
+   cd salesforce-advisor
    ```
 
 2. **Load in Chrome**

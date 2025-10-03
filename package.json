@@ -1,7 +1,7 @@
 {
-  "name": "trailblazer-ai",
+  "name": "salesforce-advisor",
   "version": "1.0.0",
-  "description": "Professional AI copilot for Salesforce administrators, developers, and users",
+  "description": "Your intelligent Salesforce copilot for enhanced productivity and expert guidance",
   "main": "src/manifest.json",
   "scripts": {
     "build": "echo 'No build process needed - Chrome extension ready to load'",
@@ -11,7 +11,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/avicool898/trailblazer-ai.git"
+    "url": "git+https://github.com/avicool898/salesforce-advisor.git"
   },
   "keywords": [
     "salesforce",
@@ -29,9 +29,9 @@
   "author": "Your Name <your.email@example.com>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/avicool898/trailblazer-ai/issues"
+    "url": "https://github.com/avicool898/salesforce-advisor/issues"
   },
-  "homepage": "https://github.com/avicool898/trailblazer-ai#readme",
+  "homepage": "https://github.com/avicool898/salesforce-advisor#readme",
   "engines": {
     "chrome": ">=88.0"
   },
