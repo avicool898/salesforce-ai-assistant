@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Salesforce AI Assistant - Settings</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #0176d3;
+    }
+    
+    .header h1 {
+      color: #0176d3;
+      margin: 0;
+    }
+    
+    .section {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .section h2 {
+      margin-top: 0;
+      color: #333;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+      color: #333;
+    }
+    
+    input, select, textarea {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    
+    input[type="password"] {
+      font-family: monospace;
+    }
+    
+    .provider-config {
+      display: none;
+      margin-top: 15px;
+      padding: 15px;
+      background: white;
+      border-radius: 4px;
+      border: 1px solid #e1e5e9;
+    }
+    
+    .provider-config.active {
+      display: block;
+    }
+    
+    .save-btn {
+      background: #0176d3;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    
+    .save-btn:hover {
+      background: #014486;
+    }
+    
+    .test-btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    
+    .test-btn:hover {
+      background: #218838;
+    }
+    
+    .status {
+      padding: 10px;
+      border-radius: 4px;
+      margin-top: 10px;
+      display: none;
+    }
+    
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    .api-links {
+      margin-top: 15px;
+    }
+    
+    .api-links a {
+      color: #0176d3;
+      text-decoration: none;
+      margin-right: 15px;
+    }
+    
+    .api-links a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🤖 Salesforce AI Assistant</h1>
+    <p>Configure your AI provider to get intelligent Salesforce assistance</p>
+  </div>
+
+  <div class="section">
+    <h2>AI Provider Configuration</h2>
+    
+    <div class="form-group">
+      <label for="aiProvider">AI Provider:</label>
+      <select id="aiProvider">
+        <option value="openrouter">OpenRouter (Grok, Claude, GPT, etc.)</option>
+        <option value="openai">OpenAI Direct (GPT-3.5/GPT-4)</option>
+        <option value="azure">Azure OpenAI</option>
+      </select>
+    </div>
+
+    <!-- OpenRouter Configuration -->
+    <div id="openrouter-config" class="provider-config active">
+      <div class="form-group">
+        <label for="openrouterApiKey">OpenRouter API Key:</label>
+        <input type="password" id="openrouterApiKey" placeholder="sk-or-v1-...">
+        <div class="help-text">Get your API key from <a href="https://openrouter.ai/keys" target="_blank">OpenRouter Keys</a></div>
+      </div>
+      
+      <div class="form-group">
+        <label for="openrouterModel">Model:</label>
+        <select id="openrouterModel">
+          <option value="x-ai/grok-4-fast:free">Grok 4 Fast (Free)</option>
+          <option value="anthropic/claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+          <option value="openai/gpt-4o">GPT-4o</option>
+          <option value="openai/gpt-3.5-turbo">GPT-3.5 Turbo</option>
+          <option value="meta-llama/llama-3.1-8b-instruct:free">Llama 3.1 8B (Free)</option>
+          <option value="microsoft/wizardlm-2-8x22b">WizardLM 2 8x22B</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="siteUrl">Your Site URL (Optional):</label>
+        <input type="text" id="siteUrl" placeholder="https://yoursite.com">
+        <div class="help-text">For OpenRouter rankings and credits</div>
+      </div>
+      
+      <div class="form-group">
+        <label for="siteName">Your Site Name (Optional):</label>
+        <input type="text" id="siteName" placeholder="Your App Name">
+        <div class="help-text">For OpenRouter rankings</div>
+      </div>
+    </div>
+
+    <!-- OpenAI Configuration -->
+    <div id="openai-config" class="provider-config">
+      <div class="form-group">
+        <label for="openaiApiKey">OpenAI API Key:</label>
+        <input type="password" id="openaiApiKey" placeholder="sk-...">
+        <div class="help-text">Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a></div>
+      </div>
+      
+      <div class="form-group">
+        <label for="openaiModel">Model:</label>
+        <select id="openaiModel">
+          <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Faster, Cheaper)</option>
+          <option value="gpt-4">GPT-4 (More Capable, Slower)</option>
+          <option value="gpt-4-turbo-preview">GPT-4 Turbo (Latest)</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Azure OpenAI Configuration -->
+    <div id="azure-config" class="provider-config">
+      <div class="form-group">
+        <label for="azureApiKey">Azure API Key:</label>
+        <input type="password" id="azureApiKey" placeholder="Your Azure OpenAI API key">
+      </div>
+      
+      <div class="form-group">
+        <label for="azureEndpoint">Azure Endpoint:</label>
+        <input type="text" id="azureEndpoint" placeholder="https://your-resource.openai.azure.com">
+      </div>
+      
+      <div class="form-group">
+        <label for="azureDeployment">Deployment Name:</label>
+        <input type="text" id="azureDeployment" placeholder="your-deployment-name">
+      </div>
+    </div>
+
+    <div class="api-links">
+      <a href="https://openrouter.ai/docs" target="_blank">📚 OpenRouter Documentation</a>
+      <a href="https://openrouter.ai/models" target="_blank">🤖 Available Models</a>
+      <a href="https://platform.openai.com/docs/quickstart" target="_blank">📚 OpenAI Documentation</a>
+      <a href="https://learn.microsoft.com/en-us/azure/ai-services/openai/" target="_blank">📚 Azure OpenAI Documentation</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Extension Settings</h2>
+    
+    <div class="form-group">
+      <label for="contextDepth">Context Analysis Depth:</label>
+      <select id="contextDepth">
+        <option value="minimal">Minimal (Page type and errors only)</option>
+        <option value="medium">Medium (Include forms and buttons)</option>
+        <option value="detailed">Detailed (Full page analysis)</option>
+      </select>
+      <div class="help-text">Higher depth provides better AI responses but sends more data to the AI service</div>
+    </div>
+    
+    <div class="form-group">
+      <label>
+        <input type="checkbox" id="autoAnalyze"> Auto-analyze pages for errors
+      </label>
+      <div class="help-text">Automatically detect and highlight Salesforce errors when pages load</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <button class="save-btn" id="saveBtn">💾 Save Settings</button>
+    <button class="test-btn" id="testBtn">🧪 Test Connection</button>
+    
+    <div class="status" id="status"></div>
+  </div>
+
+  <script src="js/options.js"></script>
+</body>
+</html>

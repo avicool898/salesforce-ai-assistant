@@ -1,0 +1,40 @@
+{
+  "name": "salesforce-ai-assistant",
+  "version": "1.0.0",
+  "description": "AI-powered Chrome extension for Salesforce users providing contextual help and intelligent assistance",
+  "main": "src/manifest.json",
+  "scripts": {
+    "build": "echo 'No build process needed - Chrome extension ready to load'",
+    "test": "echo 'Manual testing required - load extension in Chrome'",
+    "lint": "echo 'Add ESLint configuration for code linting'",
+    "package": "zip -r salesforce-ai-assistant.zip src/ README.md LICENSE CHANGELOG.md"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/YOUR_ACTUAL_USERNAME/salesforce-ai-assistant.git"
+  },
+  "keywords": [
+    "salesforce",
+    "chrome-extension",
+    "ai",
+    "assistant",
+    "grok",
+    "openai",
+    "productivity",
+    "debugging",
+    "automation",
+    "lightning-experience",
+    "salesforce-classic"
+  ],
+  "author": "Your Name <your.email@example.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/YOUR_ACTUAL_USERNAME/salesforce-ai-assistant/issues"
+  },
+  "homepage": "https://github.com/YOUR_ACTUAL_USERNAME/salesforce-ai-assistant#readme",
+  "engines": {
+    "chrome": ">=88.0"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}

@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Salesforce AI Assistant",
+  "version": "1.0.0",
+  "description": "AI-powered assistant for Salesforce workflows and troubleshooting",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://*.salesforce.com/*",
+    "https://*.force.com/*",
+    "https://*.lightning.force.com/*"
+  ],
+  "background": {
+    "service_worker": "js/background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.salesforce.com/*",
+        "https://*.force.com/*",
+        "https://*.lightning.force.com/*"
+      ],
+      "js": ["js/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Salesforce AI Assistant"
+  },
+  "options_page": "options.html"
+}
