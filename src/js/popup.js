@@ -186,14 +186,24 @@ ${this.generateContextualHelp(prompt)}`;
             messages: [
               {
                 role: 'system',
-                content: 'You are a Salesforce expert assistant. Provide helpful, specific, and actionable advice. Keep responses concise but comprehensive. Include relevant Salesforce documentation links when helpful.'
+                content: `You are a Salesforce expert assistant. Provide helpful, specific, and actionable advice.
+
+FORMATTING GUIDELINES:
+- Use proper headers (### for main sections, ## for subsections)
+- Use **bold** for important terms, field names, and key actions
+- Use numbered lists (1. 2. 3.) for step-by-step instructions
+- Use bullet points (-) for feature lists or options
+- Include relevant Salesforce documentation links in [text](url) format
+- Use \`backticks\` for field names, API names, and code snippets
+- Keep responses well-structured and professional
+- Use clear, actionable language`
               },
               {
                 role: 'user',
                 content: prompt
               }
             ],
-            max_tokens: 800,
+            max_tokens: 1000,
             temperature: 0.7
           })
         });
@@ -220,14 +230,24 @@ ${this.generateContextualHelp(prompt)}`;
             messages: [
               {
                 role: 'system',
-                content: 'You are a Salesforce expert assistant. Provide helpful, specific, and actionable advice. Keep responses concise but comprehensive. Include relevant Salesforce documentation links when helpful.'
+                content: `You are a Salesforce expert assistant. Provide helpful, specific, and actionable advice.
+
+FORMATTING GUIDELINES:
+- Use proper headers (### for main sections, ## for subsections)
+- Use **bold** for important terms, field names, and key actions
+- Use numbered lists (1. 2. 3.) for step-by-step instructions
+- Use bullet points (-) for feature lists or options
+- Include relevant Salesforce documentation links in [text](url) format
+- Use \`backticks\` for field names, API names, and code snippets
+- Keep responses well-structured and professional
+- Use clear, actionable language`
               },
               {
                 role: 'user',
                 content: prompt
               }
             ],
-            max_tokens: 800,
+            max_tokens: 1000,
             temperature: 0.7
           })
         });
@@ -347,8 +367,60 @@ Need more specific help? Try describing your exact issue or what you're trying t
   }
 
   showResponse(text) {
-    this.responseArea.textContent = text;
+    // Format the response with proper HTML styling
+    const formattedHtml = this.formatResponse(text);
+    this.responseArea.innerHTML = formattedHtml;
     this.responseArea.scrollTop = 0;
+  }
+
+  formatResponse(text) {
+    // Convert markdown-style formatting to HTML
+    let formatted = text
+      // Convert headers (### to h3, ## to h2, # to h1)
+      .replace(/^### (.*$)/gm, '<h3 class="response-h3">$1</h3>')
+      .replace(/^## (.*$)/gm, '<h2 class="response-h2">$1</h2>')
+      .replace(/^# (.*$)/gm, '<h1 class="response-h1">$1</h1>')
+      
+      // Convert bold text (**text** to <strong>)
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      
+      // Convert numbered lists (1. 2. 3.)
+      .replace(/^(\d+)\.\s+(.*)$/gm, '<li class="numbered-item"><strong>$1.</strong> $2</li>')
+      
+      // Convert bullet points (- or *)
+      .replace(/^[-*]\s+(.*)$/gm, '<li class="bullet-item">$1</li>')
+      
+      // Convert sub-bullet points (  - or  *)
+      .replace(/^  [-*]\s+(.*)$/gm, '<li class="sub-bullet-item">$1</li>')
+      
+      // Convert links [text](url) to proper HTML links
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="response-link">$1 ↗</a>')
+      
+      // Convert code blocks (```code```)
+      .replace(/```([\s\S]*?)```/g, '<pre class="code-block"><code>$1</code></pre>')
+      
+      // Convert inline code (`code`)
+      .replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>')
+      
+      // Convert line breaks to proper paragraphs
+      .replace(/\n\n/g, '</p><p class="response-paragraph">')
+      .replace(/\n/g, '<br>');
+
+    // Wrap numbered lists in <ol>
+    formatted = formatted.replace(/((?:<li class="numbered-item">.*?<\/li>\s*)+)/gs, '<ol class="numbered-list">$1</ol>');
+    
+    // Wrap bullet lists in <ul>
+    formatted = formatted.replace(/((?:<li class="bullet-item">.*?<\/li>\s*)+)/gs, '<ul class="bullet-list">$1</ul>');
+    
+    // Wrap sub-bullet lists in <ul>
+    formatted = formatted.replace(/((?:<li class="sub-bullet-item">.*?<\/li>\s*)+)/gs, '<ul class="sub-bullet-list">$1</ul>');
+
+    // Wrap everything in a paragraph if it doesn't start with a header or list
+    if (!formatted.startsWith('<h') && !formatted.startsWith('<ol') && !formatted.startsWith('<ul')) {
+      formatted = '<p class="response-paragraph">' + formatted + '</p>';
+    }
+
+    return formatted;
   }
 
   setLoading(isLoading) {
