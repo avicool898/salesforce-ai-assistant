@@ -256,7 +256,8 @@ Response:`;
 
   async makeOpenRouterRequest(settings, prompt, headers, modelOverride = null) {
     const fallbackModels = [
-      settings.aiModel || 'meta-llama/llama-3.1-8b-instruct:free',
+      settings.aiModel || 'deepseek/deepseek-chat-v3.1:free',
+      'deepseek/deepseek-chat-v3.1:free',
       'meta-llama/llama-3.1-8b-instruct:free',
       'microsoft/phi-3-mini-128k-instruct:free',
       'google/gemma-2-9b-it:free',
@@ -327,7 +328,7 @@ To use AI analysis, you need to configure an API key:
 
 1. Right-click the extension icon → Options
 2. Add your OpenRouter API key
-3. Select a working model from the list
+3. Select DeepSeek Chat v3.1 (recommended) or another model
 
 For now, here's some general help based on your context:
 

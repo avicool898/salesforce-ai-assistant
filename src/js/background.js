@@ -16,6 +16,7 @@ class SalesforceAssistantBackground {
         // Set default settings
         chrome.storage.sync.set({
           aiProvider: 'openrouter',
+          aiModel: 'deepseek/deepseek-chat-v3.1:free',
           autoAnalyze: false,
           contextDepth: 'medium'
         });

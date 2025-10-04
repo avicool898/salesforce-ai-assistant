@@ -62,7 +62,7 @@ class OptionsManager {
     // Set form values
     this.elements.aiProvider.value = settings.aiProvider || 'openrouter';
     this.elements.openrouterApiKey.value = settings.aiApiKey || '';
-    this.elements.openrouterModel.value = settings.aiModel || 'meta-llama/llama-3.1-8b-instruct:free';
+    this.elements.openrouterModel.value = settings.aiModel || 'deepseek/deepseek-chat-v3.1:free';
     this.elements.siteUrl.value = settings.siteUrl || '';
     this.elements.siteName.value = settings.siteName || '';
     this.elements.openaiApiKey.value = settings.openaiApiKey || '';
@@ -123,7 +123,7 @@ class OptionsManager {
       // Check if the selected model is likely to work
       const selectedModel = this.elements.openrouterModel.value;
       if (selectedModel.includes('grok-4-fast:free')) {
-        this.showStatus('⚠️ Note: Grok models may have limited availability. Consider using Llama or Phi-3 for better reliability.', 'error');
+        this.showStatus('⚠️ Note: Grok models may have limited availability. Consider using DeepSeek Chat v3.1 for better reliability.', 'error');
         return;
       }
     } else if (provider === 'openai') {
