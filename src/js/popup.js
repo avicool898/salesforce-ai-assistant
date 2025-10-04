@@ -5,6 +5,19 @@ class SalesforceAssistantPopup {
     this.promptInput = document.getElementById('promptInput');
     this.analyzeBtn = document.getElementById('analyzeBtn');
     this.responseArea = document.getElementById('responseArea');
+    this.historyBtn = document.getElementById('historyBtn');
+    this.closeBtn = document.getElementById('closeBtn');
+    this.historyPanel = document.getElementById('historyPanel');
+    this.historyList = document.getElementById('historyList');
+    this.clearHistoryBtn = document.getElementById('clearHistoryBtn');
+    this.conversationThread = document.getElementById('conversationThread');
+    this.threadMessages = document.getElementById('threadMessages');
+    this.newConversationBtn = document.getElementById('newConversationBtn');
+    
+    this.currentConversation = [];
+    this.conversationHistory = [];
+    this.isHistoryVisible = false;
+    this.currentConversationId = null;
 
     this.init();
   }
@@ -113,6 +126,31 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
         this.analyzeWithAI();
       }
     });
+
+    // History button
+    this.historyBtn.addEventListener('click', () => {
+      this.toggleHistory();
+    });
+
+    // Close button
+    this.closeBtn.addEventListener('click', () => {
+      window.close();
+    });
+
+    // Clear history button
+    this.clearHistoryBtn.addEventListener('click', () => {
+      this.clearConversationHistory();
+    });
+
+    // New conversation button
+    this.newConversationBtn.addEventListener('click', () => {
+      this.startNewConversation();
+    });
+
+    // Prevent popup from closing when clicking inside
+    document.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
   }
 
   async analyzeWithAI() {
@@ -122,6 +160,12 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
       return;
     }
 
+    // Add user message to conversation
+    this.addMessageToConversation('user', prompt);
+    
+    // Clear input
+    this.promptInput.value = '';
+
     this.setLoading(true);
 
     try {
@@ -129,16 +173,21 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       const contextResponse = await chrome.tabs.sendMessage(tab.id, { action: 'getContext' });
 
-      // Prepare AI prompt
-      const aiPrompt = this.buildAIPrompt(prompt, contextResponse);
+      // Prepare AI prompt with conversation context
+      const aiPrompt = this.buildAIPromptWithHistory(prompt, contextResponse);
 
       // Call AI API
       const aiResponse = await this.callAI(aiPrompt);
 
+      // Add assistant response to conversation
+      this.addMessageToConversation('assistant', aiResponse);
+
       this.showResponse(aiResponse);
     } catch (error) {
       console.error('AI Analysis error:', error);
-      this.showResponse('Sorry, I encountered an error while analyzing. Please try again.');
+      const errorMessage = 'Sorry, I encountered an error while analyzing. Please try again.';
+      this.addMessageToConversation('assistant', errorMessage);
+      this.showResponse(errorMessage);
     } finally {
       this.setLoading(false);
     }
@@ -248,6 +297,80 @@ Please provide a helpful, specific response that:
 4. Includes relevant Salesforce documentation links when helpful
 5. Considers their recent activity and form state for personalized guidance
 6. Keeps the response well-structured and actionable
+
+Response:`;
+
+    return prompt;
+  }
+
+  buildAIPromptWithHistory(userPrompt, contextData) {
+    const context = contextData?.context || {};
+    const content = contextData?.content || {};
+    const storage = contextData?.storage || {};
+    const enhanced = contextData?.enhanced || false;
+
+    let prompt = `You are Salesforce Advisor, an expert AI assistant. This is a continuing conversation. Use the conversation history to provide contextual responses.
+
+CURRENT CONTEXT:
+- Page Type: ${context.pageType || 'Unknown'}
+- Object: ${context.currentObject || 'Not detected'}
+- Interface: ${context.userInterface || 'Unknown'}
+- URL: ${context.url || 'Not available'}
+- Errors: ${context.errors?.length || 0} detected`;
+
+    // Add enhanced context if available
+    if (enhanced && context.urlMetadata) {
+      const meta = context.urlMetadata;
+      prompt += `
+
+ADVANCED URL ANALYSIS:
+- Action: ${meta.action || 'view'}
+- Record ID: ${meta.recordId || 'None'}
+- Object Type: ${meta.objectType || 'Unknown'}
+- Mode: ${meta.mode || 'view'}
+- App Context: ${meta.app || 'Standard'}`;
+    }
+
+    // Add conversation history
+    if (this.currentConversation.length > 1) {
+      prompt += `
+
+CONVERSATION HISTORY:`;
+      
+      // Include last 6 messages for context (3 exchanges)
+      const recentMessages = this.currentConversation.slice(-6);
+      recentMessages.forEach(message => {
+        const role = message.role === 'user' ? 'User' : 'Assistant';
+        const content = message.content.substring(0, 300); // Limit length
+        prompt += `\n${role}: ${content}`;
+      });
+    }
+
+    // Add current context
+    if (context.errors?.length > 0) {
+      prompt += `
+
+CURRENT ERRORS:
+${context.errors.map(err => `- ${err.type}: ${err.message}`).join('\n')}`;
+    }
+
+    if (content.fields?.length > 0) {
+      prompt += `
+
+VISIBLE FIELDS:
+${content.fields.slice(0, 10).map(field => `- ${field.label} (${field.type}${field.required ? ', required' : ''})`).join('\n')}`;
+    }
+
+    prompt += `
+
+CURRENT USER MESSAGE: ${userPrompt}
+
+Please provide a helpful response that:
+1. Considers the conversation history and context
+2. Addresses the current question directly
+3. References previous discussion when relevant
+4. Provides specific Salesforce guidance
+5. Maintains conversation continuity
 
 Response:`;
 
@@ -511,8 +634,14 @@ Need more specific help? Try describing your exact issue or what you're trying t
   showResponse(text) {
     // Format the response with proper HTML styling
     const formattedHtml = this.formatResponse(text);
-    this.responseArea.innerHTML = formattedHtml;
-    this.responseArea.scrollTop = 0;
+    
+    // If we have a conversation thread, update it; otherwise use response area
+    if (this.currentConversation.length > 1) {
+      this.renderConversationThread();
+    } else {
+      this.responseArea.innerHTML = formattedHtml;
+      this.responseArea.scrollTop = 0;
+    }
   }
 
   formatResponse(text) {
@@ -599,6 +728,192 @@ Need more specific help? Try describing your exact issue or what you're trying t
         this.promptInput.placeholder = `Last: ${result.lastPrompt.substring(0, 50)}...`;
       }
     });
+    
+    // Load conversation history
+    this.loadConversationHistory();
+  }
+
+  async loadConversationHistory() {
+    try {
+      const result = await chrome.storage.local.get(['conversationHistory', 'currentConversation']);
+      this.conversationHistory = result.conversationHistory || [];
+      this.currentConversation = result.currentConversation || [];
+      
+      if (this.currentConversation.length > 0) {
+        this.showConversationThread();
+        this.renderConversationThread();
+      }
+      
+      this.renderHistoryList();
+    } catch (error) {
+      console.error('Failed to load conversation history:', error);
+    }
+  }
+
+  async saveConversationHistory() {
+    try {
+      await chrome.storage.local.set({
+        conversationHistory: this.conversationHistory,
+        currentConversation: this.currentConversation
+      });
+    } catch (error) {
+      console.error('Failed to save conversation history:', error);
+    }
+  }
+
+  toggleHistory() {
+    this.isHistoryVisible = !this.isHistoryVisible;
+    this.historyPanel.style.display = this.isHistoryVisible ? 'block' : 'none';
+    
+    if (this.isHistoryVisible) {
+      this.renderHistoryList();
+    }
+  }
+
+  renderHistoryList() {
+    if (this.conversationHistory.length === 0) {
+      this.historyList.innerHTML = '<div class="history-empty">No conversation history yet. Start asking questions!</div>';
+      return;
+    }
+
+    const historyHTML = this.conversationHistory.map((conversation, index) => {
+      const firstMessage = conversation.messages[0];
+      const preview = firstMessage.content.substring(0, 60) + (firstMessage.content.length > 60 ? '...' : '');
+      const time = new Date(conversation.timestamp).toLocaleString();
+      
+      return `
+        <div class="history-item" data-conversation-id="${conversation.id}">
+          <div class="history-item-preview">${preview}</div>
+          <div class="history-item-time">${time} • ${conversation.messages.length} messages</div>
+        </div>
+      `;
+    }).join('');
+
+    this.historyList.innerHTML = historyHTML;
+
+    // Add click listeners to history items
+    this.historyList.querySelectorAll('.history-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const conversationId = item.dataset.conversationId;
+        this.loadConversation(conversationId);
+      });
+    });
+  }
+
+  loadConversation(conversationId) {
+    const conversation = this.conversationHistory.find(c => c.id === conversationId);
+    if (conversation) {
+      this.currentConversation = [...conversation.messages];
+      this.currentConversationId = conversationId;
+      this.showConversationThread();
+      this.renderConversationThread();
+      this.historyPanel.style.display = 'none';
+      this.isHistoryVisible = false;
+    }
+  }
+
+  showConversationThread() {
+    this.conversationThread.style.display = 'block';
+    this.responseArea.style.display = 'none';
+  }
+
+  hideConversationThread() {
+    this.conversationThread.style.display = 'none';
+    this.responseArea.style.display = 'block';
+  }
+
+  renderConversationThread() {
+    if (this.currentConversation.length === 0) {
+      this.threadMessages.innerHTML = '<div class="history-empty">Start a new conversation!</div>';
+      return;
+    }
+
+    const messagesHTML = this.currentConversation.map(message => {
+      const time = new Date(message.timestamp).toLocaleString();
+      const isUser = message.role === 'user';
+      
+      return `
+        <div class="message ${isUser ? 'user' : 'assistant'}">
+          <div class="message-header">${isUser ? '👤 You' : '🤖 Salesforce Advisor'}</div>
+          <div class="message-content">${isUser ? message.content : this.formatResponse(message.content)}</div>
+          <div class="message-time">${time}</div>
+        </div>
+      `;
+    }).join('');
+
+    this.threadMessages.innerHTML = messagesHTML;
+    this.threadMessages.scrollTop = this.threadMessages.scrollHeight;
+  }
+
+  startNewConversation() {
+    this.currentConversation = [];
+    this.currentConversationId = null;
+    this.hideConversationThread();
+    this.responseArea.innerHTML = 'Ready to help! Ask me about the current Salesforce page or describe what you're working on.';
+    this.promptInput.focus();
+    this.saveConversationHistory();
+  }
+
+  clearConversationHistory() {
+    if (confirm('Are you sure you want to clear all conversation history? This cannot be undone.')) {
+      this.conversationHistory = [];
+      this.currentConversation = [];
+      this.currentConversationId = null;
+      this.saveConversationHistory();
+      this.renderHistoryList();
+      this.hideConversationThread();
+      this.responseArea.innerHTML = 'Conversation history cleared. Ready to start fresh!';
+    }
+  }
+
+  addMessageToConversation(role, content) {
+    const message = {
+      role: role,
+      content: content,
+      timestamp: Date.now()
+    };
+    
+    this.currentConversation.push(message);
+    
+    // If this is a new conversation (first user message), create a new conversation entry
+    if (this.currentConversation.length === 1 && role === 'user') {
+      this.currentConversationId = 'conv_' + Date.now();
+    }
+    
+    // Save conversation to history when it has both user and assistant messages
+    if (this.currentConversation.length >= 2 && role === 'assistant') {
+      this.saveConversationToHistory();
+    }
+    
+    this.saveConversationHistory();
+    
+    if (this.currentConversation.length > 1) {
+      this.showConversationThread();
+      this.renderConversationThread();
+    }
+  }
+
+  saveConversationToHistory() {
+    if (!this.currentConversationId) return;
+    
+    // Update existing conversation or add new one
+    const existingIndex = this.conversationHistory.findIndex(c => c.id === this.currentConversationId);
+    const conversationData = {
+      id: this.currentConversationId,
+      messages: [...this.currentConversation],
+      timestamp: this.currentConversation[0].timestamp
+    };
+    
+    if (existingIndex >= 0) {
+      this.conversationHistory[existingIndex] = conversationData;
+    } else {
+      this.conversationHistory.unshift(conversationData);
+    }
+    
+    // Keep only last 50 conversations
+    if (this.conversationHistory.length > 50) {
+      this.conversationHistory = this.conversationHistory.slice(0, 50);
+    }
   }
 
   // Test function to preview formatting (for development)
