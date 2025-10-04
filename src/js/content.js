@@ -18,24 +18,38 @@ class SalesforceContextAnalyzer {
   }
 
   detectContext() {
-    const url = window.location.href;
-    const title = document.title;
-    
-    // Enhanced context with deep analysis
-    this.context = {
-      url: url,
-      title: title,
-      urlMetadata: this.parseAdvancedURL(url),
-      pageType: this.detectPageType(),
-      errors: this.extractErrors(),
-      currentObject: this.detectCurrentObject(),
-      userInterface: this.detectInterface(),
-      userActivity: this.analyzeUserActivity(),
-      salesforceMetadata: this.extractSalesforceMetadata(),
-      componentTree: this.analyzeLightningComponents(),
-      recentActivity: this.getRecentActivity(),
-      timestamp: Date.now()
-    };
+    try {
+      const url = window.location.href;
+      const title = document.title;
+      
+      // Enhanced context with deep analysis
+      this.context = {
+        url: url,
+        title: title,
+        urlMetadata: this.parseAdvancedURL(url),
+        pageType: this.detectPageType(),
+        errors: this.extractErrors(),
+        currentObject: this.detectCurrentObject(),
+        userInterface: this.detectInterface(),
+        userActivity: this.analyzeUserActivity(),
+        salesforceMetadata: this.extractSalesforceMetadata(),
+        componentTree: this.analyzeLightningComponents(),
+        recentActivity: this.getRecentActivity(),
+        timestamp: Date.now()
+      };
+    } catch (error) {
+      console.warn('Context detection failed:', error);
+      // Fallback to basic context
+      this.context = {
+        url: window.location.href,
+        title: document.title,
+        pageType: 'Unknown',
+        errors: [],
+        currentObject: null,
+        userInterface: 'Unknown',
+        timestamp: Date.now()
+      };
+    }
   }
 
   parseAdvancedURL(url) {
@@ -429,34 +443,76 @@ class SalesforceContextAnalyzer {
   extractErrors() {
     const errors = [];
     
-    // Lightning error messages
-    document.querySelectorAll('.slds-notify--error, .slds-notify_error').forEach(el => {
-      errors.push({
-        type: 'Lightning Error',
-        message: el.textContent.trim(),
-        element: el.outerHTML.substring(0, 200)
+    try {
+      // Lightning error messages
+      const lightningErrorSelectors = [
+        '.slds-notify--error',
+        '.slds-notify_error',
+        '.slds-has-error',
+        '.error-message'
+      ];
+      
+      lightningErrorSelectors.forEach(selector => {
+        try {
+          document.querySelectorAll(selector).forEach(el => {
+            const message = el.textContent.trim();
+            if (message) {
+              errors.push({
+                type: 'Lightning Error',
+                message: message,
+                element: el.outerHTML.substring(0, 200)
+              });
+            }
+          });
+        } catch (e) {
+          console.warn(`Error with selector ${selector}:`, e);
+        }
       });
-    });
-    
-    // Apex debug logs or errors
-    document.querySelectorAll('.messageText, .errorMsg').forEach(el => {
-      if (el.textContent.trim()) {
-        errors.push({
-          type: 'System Error',
-          message: el.textContent.trim(),
-          element: el.outerHTML.substring(0, 200)
+      
+      // Apex debug logs or errors
+      const systemErrorSelectors = [
+        '.messageText',
+        '.errorMsg',
+        '.apexErrorMsg',
+        '.debugLog .error'
+      ];
+      
+      systemErrorSelectors.forEach(selector => {
+        try {
+          document.querySelectorAll(selector).forEach(el => {
+            const message = el.textContent.trim();
+            if (message) {
+              errors.push({
+                type: 'System Error',
+                message: message,
+                element: el.outerHTML.substring(0, 200)
+              });
+            }
+          });
+        } catch (e) {
+          console.warn(`Error with selector ${selector}:`, e);
+        }
+      });
+      
+      // Flow errors
+      try {
+        document.querySelectorAll('[data-error-message]').forEach(el => {
+          const errorMessage = el.getAttribute('data-error-message');
+          if (errorMessage) {
+            errors.push({
+              type: 'Flow Error',
+              message: errorMessage,
+              element: el.outerHTML.substring(0, 200)
+            });
+          }
         });
+      } catch (e) {
+        console.warn('Error extracting Flow errors:', e);
       }
-    });
-    
-    // Flow errors
-    document.querySelectorAll('[data-error-message]').forEach(el => {
-      errors.push({
-        type: 'Flow Error',
-        message: el.getAttribute('data-error-message'),
-        element: el.outerHTML.substring(0, 200)
-      });
-    });
+      
+    } catch (error) {
+      console.warn('Error extraction failed:', error);
+    }
     
     return errors;
   }
@@ -637,29 +693,63 @@ class SalesforceContextAnalyzer {
   analyzeLightningComponents() {
     const components = [];
     
-    // Look for Lightning Web Components
-    const lwcElements = document.querySelectorAll('[data-aura-class], [data-lwc-class], c-*');
-    lwcElements.forEach(element => {
-      components.push({
-        type: 'LWC',
-        tagName: element.tagName.toLowerCase(),
-        attributes: Array.from(element.attributes).map(attr => ({
-          name: attr.name,
-          value: attr.value
-        })),
-        classes: element.className
+    try {
+      // Look for Lightning Web Components with proper selectors
+      const lwcSelectors = [
+        '[data-aura-class]',
+        '[data-lwc-class]',
+        '[data-lwc-host]',
+        '[lwc\\:host]'
+      ];
+      
+      lwcSelectors.forEach(selector => {
+        try {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach(element => {
+            components.push({
+              type: 'LWC',
+              tagName: element.tagName.toLowerCase(),
+              attributes: Array.from(element.attributes).map(attr => ({
+                name: attr.name,
+                value: attr.value.substring(0, 100) // Limit value length
+              })),
+              classes: element.className
+            });
+          });
+        } catch (e) {
+          console.warn(`Invalid selector ${selector}:`, e);
+        }
       });
-    });
-    
-    // Look for Aura components
-    const auraElements = document.querySelectorAll('[data-aura-rendered-by]');
-    auraElements.forEach(element => {
-      components.push({
-        type: 'Aura',
-        renderedBy: element.getAttribute('data-aura-rendered-by'),
-        classes: element.className
+      
+      // Look for custom Lightning components (c- prefix)
+      const allElements = document.querySelectorAll('*');
+      allElements.forEach(element => {
+        if (element.tagName.toLowerCase().startsWith('c-')) {
+          components.push({
+            type: 'Custom LWC',
+            tagName: element.tagName.toLowerCase(),
+            attributes: Array.from(element.attributes).map(attr => ({
+              name: attr.name,
+              value: attr.value.substring(0, 100)
+            })),
+            classes: element.className
+          });
+        }
       });
-    });
+      
+      // Look for Aura components
+      const auraElements = document.querySelectorAll('[data-aura-rendered-by]');
+      auraElements.forEach(element => {
+        components.push({
+          type: 'Aura',
+          renderedBy: element.getAttribute('data-aura-rendered-by'),
+          classes: element.className
+        });
+      });
+      
+    } catch (error) {
+      console.warn('Lightning component analysis failed:', error);
+    }
     
     return components.slice(0, 20); // Limit to prevent overwhelming data
   }
@@ -688,50 +778,68 @@ class SalesforceContextAnalyzer {
   }
 
   setupMutationObserver() {
-    // Watch for DOM changes to detect dynamic content
-    this.mutationObserver = new MutationObserver((mutations) => {
-      let shouldUpdate = false;
-      
-      mutations.forEach((mutation) => {
-        // Check for error messages
-        if (mutation.type === 'childList') {
-          const addedNodes = Array.from(mutation.addedNodes);
-          const hasErrors = addedNodes.some(node => 
-            node.nodeType === 1 && (
-              node.classList?.contains('slds-notify--error') ||
-              node.classList?.contains('error') ||
-              node.querySelector?.('.slds-notify--error, .error')
-            )
-          );
-          
-          if (hasErrors) {
-            shouldUpdate = true;
-          }
-        }
+    try {
+      // Watch for DOM changes to detect dynamic content
+      this.mutationObserver = new MutationObserver((mutations) => {
+        let shouldUpdate = false;
         
-        // Check for modal changes
-        if (mutation.target.classList?.contains('slds-modal') ||
-            mutation.target.querySelector?.('.slds-modal')) {
-          shouldUpdate = true;
+        try {
+          mutations.forEach((mutation) => {
+            // Check for error messages
+            if (mutation.type === 'childList') {
+              const addedNodes = Array.from(mutation.addedNodes);
+              const hasErrors = addedNodes.some(node => {
+                try {
+                  return node.nodeType === 1 && (
+                    node.classList?.contains('slds-notify--error') ||
+                    node.classList?.contains('error') ||
+                    node.querySelector?.('.slds-notify--error, .error')
+                  );
+                } catch (e) {
+                  return false;
+                }
+              });
+              
+              if (hasErrors) {
+                shouldUpdate = true;
+              }
+            }
+            
+            // Check for modal changes
+            try {
+              if (mutation.target.classList?.contains('slds-modal') ||
+                  mutation.target.querySelector?.('.slds-modal')) {
+                shouldUpdate = true;
+              }
+            } catch (e) {
+              // Ignore selector errors
+            }
+          });
+          
+          if (shouldUpdate) {
+            // Debounce updates
+            clearTimeout(this.updateTimeout);
+            this.updateTimeout = setTimeout(() => {
+              this.detectContext();
+            }, 500);
+          }
+        } catch (error) {
+          console.warn('Mutation observer error:', error);
         }
       });
       
-      if (shouldUpdate) {
-        // Debounce updates
-        clearTimeout(this.updateTimeout);
-        this.updateTimeout = setTimeout(() => {
-          this.detectContext();
-        }, 500);
+      // Start observing with error handling
+      if (document.body) {
+        this.mutationObserver.observe(document.body, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+          attributeFilter: ['class', 'style']
+        });
       }
-    });
-    
-    // Start observing
-    this.mutationObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['class', 'style']
-    });
+    } catch (error) {
+      console.warn('Failed to setup mutation observer:', error);
+    }
   }
 
   setupEventListeners() {
