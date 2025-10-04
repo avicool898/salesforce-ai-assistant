@@ -6,7 +6,8 @@
   "permissions": [
     "activeTab",
     "storage",
-    "scripting"
+    "scripting",
+    "sidePanel"
   ],
   "host_permissions": [
     "https://*.salesforce.com/*",
@@ -28,8 +29,10 @@
     }
   ],
   "action": {
-    "default_popup": "popup.html",
     "default_title": "Salesforce Advisor - Your Salesforce Copilot"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
   "options_page": "options.html",
   "icons": {
