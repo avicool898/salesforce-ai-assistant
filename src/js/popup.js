@@ -831,11 +831,12 @@ Need more specific help? Try describing your exact issue or what you're trying t
     const messagesHTML = this.currentConversation.map(message => {
       const time = new Date(message.timestamp).toLocaleString();
       const isUser = message.role === 'user';
+      const content = isUser ? message.content : this.formatResponse(message.content);
       
       return `
         <div class="message ${isUser ? 'user' : 'assistant'}">
           <div class="message-header">${isUser ? '👤 You' : '🤖 Salesforce Advisor'}</div>
-          <div class="message-content">${isUser ? message.content : this.formatResponse(message.content)}</div>
+          <div class="message-content">${content}</div>
           <div class="message-time">${time}</div>
         </div>
       `;
@@ -849,7 +850,7 @@ Need more specific help? Try describing your exact issue or what you're trying t
     this.currentConversation = [];
     this.currentConversationId = null;
     this.hideConversationThread();
-    this.responseArea.innerHTML = 'Ready to help! Ask me about the current Salesforce page or describe what you're working on.';
+    this.responseArea.innerHTML = "Ready to help! Ask me about the current Salesforce page or describe what you're working on.";
     this.promptInput.focus();
     this.saveConversationHistory();
   }
