@@ -254,6 +254,69 @@ Response:`;
     return prompt;
   }
 
+  async makeOpenRouterRequest(settings, prompt, headers, modelOverride = null) {
+    const fallbackModels = [
+      settings.aiModel || 'meta-llama/llama-3.1-8b-instruct:free',
+      'meta-llama/llama-3.1-8b-instruct:free',
+      'microsoft/phi-3-mini-128k-instruct:free',
+      'google/gemma-2-9b-it:free',
+      'qwen/qwen-2-7b-instruct:free'
+    ];
+
+    const modelToUse = modelOverride || fallbackModels[0];
+
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify({
+        model: modelToUse,
+        messages: [
+          {
+            role: 'system',
+            content: `You are Salesforce Advisor, a professional Salesforce expert assistant and copilot. Provide helpful, specific, and actionable advice with the expertise of a seasoned Salesforce architect.
+
+FORMATTING GUIDELINES:
+- Use proper headers (### for main sections, ## for subsections)
+- Use **bold** for important terms, field names, and key actions
+- Use numbered lists (1. 2. 3.) for step-by-step instructions
+- Use bullet points (-) for feature lists or options
+- Include relevant Salesforce documentation links in [text](url) format
+- Use \`backticks\` for field names, API names, and code snippets
+- Keep responses well-structured and professional
+- Use clear, actionable language
+- Reference Salesforce best practices and Trailhead resources when relevant`
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      
+      // If model not found, try fallback models
+      if (error.error?.message?.includes('No endpoints found') || 
+          error.error?.message?.includes('not found') ||
+          response.status === 404) {
+        
+        const currentModelIndex = fallbackModels.indexOf(modelToUse);
+        if (currentModelIndex < fallbackModels.length - 1) {
+          console.warn(`Model ${modelToUse} failed, trying fallback...`);
+          return this.makeOpenRouterRequest(settings, prompt, headers, fallbackModels[currentModelIndex + 1]);
+        }
+      }
+      
+      throw new Error(error.error?.message || `OpenRouter API Error: ${response.status}`);
+    }
+
+    return response;
+  }
+
   async callAI(prompt) {
     const settings = await this.getSettings();
 
@@ -264,7 +327,7 @@ To use AI analysis, you need to configure an API key:
 
 1. Right-click the extension icon → Options
 2. Add your OpenRouter API key
-3. Select Grok or other preferred model
+3. Select a working model from the list
 
 For now, here's some general help based on your context:
 
@@ -287,40 +350,7 @@ ${this.generateContextualHelp(prompt)}`;
           headers['X-Title'] = settings.siteName;
         }
 
-        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-          method: 'POST',
-          headers: headers,
-          body: JSON.stringify({
-            model: settings.aiModel || 'x-ai/grok-4-fast:free',
-            messages: [
-              {
-                role: 'system',
-                content: `You are a Salesforce expert assistant. Provide helpful, specific, and actionable advice.
-
-FORMATTING GUIDELINES:
-- Use proper headers (### for main sections, ## for subsections)
-- Use **bold** for important terms, field names, and key actions
-- Use numbered lists (1. 2. 3.) for step-by-step instructions
-- Use bullet points (-) for feature lists or options
-- Include relevant Salesforce documentation links in [text](url) format
-- Use \`backticks\` for field names, API names, and code snippets
-- Keep responses well-structured and professional
-- Use clear, actionable language`
-              },
-              {
-                role: 'user',
-                content: prompt
-              }
-            ],
-            max_tokens: 1000,
-            temperature: 0.7
-          })
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error?.message || `OpenRouter API Error: ${response.status}`);
-        }
+        const response = await this.makeOpenRouterRequest(settings, prompt, headers);
 
         const data = await response.json();
         return data.choices[0].message.content;

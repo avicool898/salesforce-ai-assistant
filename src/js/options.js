@@ -62,7 +62,7 @@ class OptionsManager {
     // Set form values
     this.elements.aiProvider.value = settings.aiProvider || 'openrouter';
     this.elements.openrouterApiKey.value = settings.aiApiKey || '';
-    this.elements.openrouterModel.value = settings.aiModel || 'x-ai/grok-4-fast:free';
+    this.elements.openrouterModel.value = settings.aiModel || 'meta-llama/llama-3.1-8b-instruct:free';
     this.elements.siteUrl.value = settings.siteUrl || '';
     this.elements.siteName.value = settings.siteName || '';
     this.elements.openaiApiKey.value = settings.openaiApiKey || '';
@@ -117,6 +117,13 @@ class OptionsManager {
       apiKey = this.elements.openrouterApiKey.value.trim();
       if (!apiKey) {
         this.showStatus('Please enter your OpenRouter API key first', 'error');
+        return;
+      }
+      
+      // Check if the selected model is likely to work
+      const selectedModel = this.elements.openrouterModel.value;
+      if (selectedModel.includes('grok-4-fast:free')) {
+        this.showStatus('⚠️ Note: Grok models may have limited availability. Consider using Llama or Phi-3 for better reliability.', 'error');
         return;
       }
     } else if (provider === 'openai') {
@@ -183,6 +190,16 @@ class OptionsManager {
 
         if (!response.ok) {
           const error = await response.json();
+          
+          // Provide helpful error messages for common issues
+          if (error.error?.message?.includes('No endpoints found')) {
+            throw new Error(`Model "${this.elements.openrouterModel.value}" is not available. Please select a different model.`);
+          } else if (error.error?.message?.includes('insufficient_quota')) {
+            throw new Error('Insufficient quota. Please check your OpenRouter account balance.');
+          } else if (error.error?.message?.includes('invalid_api_key')) {
+            throw new Error('Invalid API key. Please check your OpenRouter API key.');
+          }
+          
           throw new Error(error.error?.message || `HTTP ${response.status}`);
         }
 
