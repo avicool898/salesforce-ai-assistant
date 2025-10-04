@@ -123,7 +123,7 @@ class OptionsManager {
       // Check if the selected model is likely to work
       const selectedModel = this.elements.openrouterModel.value;
       if (selectedModel.includes('grok-4-fast:free')) {
-        this.showStatus('⚠️ Note: Grok models may have limited availability. Consider using DeepSeek Chat v3.1 for better reliability.', 'error');
+        this.showStatus('⚠️ Note: Grok models may have limited availability. Consider using DeepSeek, NVIDIA Nemotron, or Alibaba Tongyi for better reliability.', 'error');
         return;
       }
     } else if (provider === 'openai') {

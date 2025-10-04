@@ -258,6 +258,8 @@ Response:`;
     const fallbackModels = [
       settings.aiModel || 'deepseek/deepseek-chat-v3.1:free',
       'deepseek/deepseek-chat-v3.1:free',
+      'nvidia/nemotron-nano-9b-v2:free',
+      'alibaba/tongyi-deepresearch-30b-a3b:free',
       'meta-llama/llama-3.1-8b-instruct:free',
       'microsoft/phi-3-mini-128k-instruct:free',
       'google/gemma-2-9b-it:free',
@@ -328,7 +330,7 @@ To use AI analysis, you need to configure an API key:
 
 1. Right-click the extension icon → Options
 2. Add your OpenRouter API key
-3. Select DeepSeek Chat v3.1 (recommended) or another model
+3. Select from premium free models (DeepSeek, NVIDIA, Alibaba, etc.)
 
 For now, here's some general help based on your context:
 
