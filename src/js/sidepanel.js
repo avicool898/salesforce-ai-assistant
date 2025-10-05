@@ -425,13 +425,13 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
       return;
     }
 
-    const messagesHTML = this.currentConversation.map(message => {
+    const messagesHTML = this.currentConversation.map((message, index) => {
       const time = new Date(message.timestamp).toLocaleString();
       const isUser = message.role === 'user';
       const content = isUser ? message.content : this.formatResponse(message.content);
       
       return `
-        <div class="message ${isUser ? 'user' : 'assistant'}">
+        <div class="message ${isUser ? 'user' : 'assistant'}" data-message-index="${index}">
           <div class="message-header">${isUser ? '👤 You' : '🤖 Salesforce Advisor'}</div>
           <div class="message-content">${content}</div>
           <div class="message-time">${time}</div>
@@ -443,12 +443,56 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     
     // Smart scrolling based on context
     if (scrollToBottom) {
-      // Scroll to bottom for new messages (user wants to see their new question/answer)
-      this.threadMessages.scrollTop = this.threadMessages.scrollHeight;
+      // Scroll to show the most recent message in a comfortable position
+      this.scrollToRecentMessage();
     } else {
       // Scroll to top for loaded conversations (user wants to read from beginning)
       this.threadMessages.scrollTop = 0;
     }
+  }
+
+  scrollToRecentMessage() {
+    // Wait for DOM to update, then scroll to show the most recent message
+    setTimeout(() => {
+      const messages = this.threadMessages.querySelectorAll('.message');
+      if (messages.length === 0) return;
+      
+      // Get the most recent message (last one)
+      const lastMessage = messages[messages.length - 1];
+      
+      // Calculate optimal scroll position to show the recent message comfortably
+      const containerHeight = this.threadMessages.clientHeight;
+      const messageTop = lastMessage.offsetTop;
+      const messageHeight = lastMessage.offsetHeight;
+      
+      // Position the recent message about 1/3 from the bottom of the visible area
+      // This gives context of previous messages while highlighting the new one
+      const optimalPosition = messageTop - (containerHeight * 0.6) + messageHeight;
+      
+      // Ensure we don't scroll past the content
+      const maxScroll = this.threadMessages.scrollHeight - containerHeight;
+      const targetScroll = Math.min(Math.max(0, optimalPosition), maxScroll);
+      
+      // Smooth scroll to the optimal position (with fallback)
+      try {
+        this.threadMessages.scrollTo({
+          top: targetScroll,
+          behavior: 'smooth'
+        });
+      } catch (error) {
+        // Fallback for browsers that don't support smooth scrolling
+        this.threadMessages.scrollTop = targetScroll;
+      }
+      
+      // Briefly highlight the most recent message to draw attention
+      lastMessage.style.transition = 'background-color 0.3s ease';
+      lastMessage.style.backgroundColor = 'rgba(1, 118, 211, 0.1)';
+      
+      setTimeout(() => {
+        lastMessage.style.backgroundColor = '';
+      }, 1500);
+      
+    }, 50);
   }
 
   startNewConversation() {
