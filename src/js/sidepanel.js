@@ -226,19 +226,90 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
   // Copy all the conversation history methods from popup.js
   async loadConversationHistory() {
     try {
-      const result = await chrome.storage.local.get(['conversationHistory', 'currentConversation']);
+      const result = await chrome.storage.local.get([
+        'conversationHistory', 
+        'currentConversation', 
+        'lastSessionTime'
+      ]);
+      
       this.conversationHistory = result.conversationHistory || [];
       this.currentConversation = result.currentConversation || [];
       
-      if (this.currentConversation.length > 0) {
+      // Check if this is a new session (more than 30 minutes since last activity)
+      const lastSessionTime = result.lastSessionTime || 0;
+      const currentTime = Date.now();
+      const sessionTimeout = 30 * 60 * 1000; // 30 minutes
+      const isNewSession = (currentTime - lastSessionTime) > sessionTimeout;
+      
+      // If it's a new session, start fresh but show history if available
+      if (isNewSession) {
+        this.startFreshSession();
+      } else if (this.currentConversation.length > 0) {
+        // Continue existing session only if recent
         this.showConversationThread();
         this.renderConversationThread();
       }
       
+      // Always render history list for easy access
       this.renderHistoryList();
+      
+      // Update last session time
+      this.updateSessionTime();
+      
     } catch (error) {
       console.error('Failed to load conversation history:', error);
     }
+  }
+
+  startFreshSession() {
+    // Clear current conversation but keep history
+    this.currentConversation = [];
+    this.currentConversationId = null;
+    
+    // Hide conversation thread and show fresh interface
+    this.hideConversationThread();
+    
+    // Show welcome message
+    this.responseArea.innerHTML = `
+      <div class="welcome-message">
+        <h3>👋 Welcome back!</h3>
+        <p>Ready to help with your Salesforce tasks.</p>
+        ${this.conversationHistory.length > 0 ? 
+          '<div class="welcome-tip"><strong>💡 Tip:</strong> Click the history button 📜 to view previous conversations or start typing below for a new conversation.</div>' : 
+          '<div class="welcome-tip">Start by asking a question or describing what you need help with.</div>'
+        }
+      </div>
+    `;
+    
+    // Show history panel if there are previous conversations
+    if (this.conversationHistory.length > 0) {
+      this.showHistoryHint();
+    }
+    
+    // Focus on input for immediate use
+    setTimeout(() => {
+      this.promptInput.focus();
+    }, 100);
+  }
+
+  showHistoryHint() {
+    // Briefly show history panel as a hint, then hide it
+    this.historyPanel.style.display = 'block';
+    this.historyPanel.classList.add('history-hint');
+    this.isHistoryVisible = true;
+    
+    // Auto-hide after 4 seconds unless user interacts
+    setTimeout(() => {
+      if (this.isHistoryVisible && !this.historyPanel.matches(':hover')) {
+        this.historyPanel.style.display = 'none';
+        this.historyPanel.classList.remove('history-hint');
+        this.isHistoryVisible = false;
+      }
+    }, 4000);
+  }
+
+  updateSessionTime() {
+    chrome.storage.local.set({ lastSessionTime: Date.now() });
   }
 
   async saveConversationHistory() {
@@ -300,6 +371,15 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
       this.renderConversationThread();
       this.historyPanel.style.display = 'none';
       this.isHistoryVisible = false;
+      
+      // Update session time when loading a conversation
+      this.updateSessionTime();
+      
+      // Show a subtle indicator that this is a loaded conversation
+      const threadHeader = document.querySelector('.thread-header h3');
+      if (threadHeader) {
+        threadHeader.innerHTML = `📖 Loaded Conversation <small style="font-weight: normal; opacity: 0.7;">(${new Date(conversation.timestamp).toLocaleDateString()})</small>`;
+      }
     }
   }
 
@@ -341,9 +421,22 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     this.currentConversation = [];
     this.currentConversationId = null;
     this.hideConversationThread();
-    this.responseArea.innerHTML = "Ready to help! Ask me about the current Salesforce page or describe what you're working on.";
+    
+    // Show fresh start message
+    this.responseArea.innerHTML = `
+      <div class="welcome-message">
+        <h3>✨ New Conversation</h3>
+        <p>Ready to help! Ask me about the current Salesforce page or describe what you're working on.</p>
+      </div>
+    `;
+    
+    // Hide history panel
+    this.historyPanel.style.display = 'none';
+    this.isHistoryVisible = false;
+    
     this.promptInput.focus();
     this.saveConversationHistory();
+    this.updateSessionTime();
   }
 
   clearConversationHistory() {
@@ -378,6 +471,9 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     }
     
     this.saveConversationHistory();
+    
+    // Update session time on user activity
+    this.updateSessionTime();
     
     if (this.currentConversation.length > 1) {
       this.showConversationThread();
