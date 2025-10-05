@@ -69,53 +69,24 @@ class SalesforceAssistantSidePanel {
   }
 
   displayContext(context) {
-    // Create a more informative context display
-    let contextText = `🔍 SALESFORCE PAGE CONTEXT
-📍 ${context.pageType}${context.currentObject ? ` - ${context.currentObject}` : ''}
-🖥️ ${context.userInterface} Experience
-${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected` : '✅ No errors detected'}`;
-
-    // Add enhanced context if available
+    // Create a compact, essential context display
+    let contextText = `📍 ${context.pageType}${context.currentObject ? ` - ${context.currentObject}` : ''}`;
+    
+    // Add only the most important information
+    if (context.errors.length > 0) {
+      contextText += ` ⚠️ ${context.errors.length} error(s)`;
+    }
+    
+    // Add enhanced context if available (compact format)
     if (context.urlMetadata) {
       const meta = context.urlMetadata;
       if (meta.action && meta.action !== 'view') {
-        contextText += `\n🎯 Action: ${meta.action.charAt(0).toUpperCase() + meta.action.slice(1)}`;
-      }
-      if (meta.recordId) {
-        contextText += `\n🆔 Record: ${meta.recordId.substring(0, 8)}...`;
+        contextText += ` • ${meta.action}`;
       }
       if (meta.app && meta.app !== 'Standard') {
-        contextText += `\n📱 App: ${meta.app}`;
+        contextText += ` • ${meta.app}`;
       }
     }
-
-    // Add user activity hints
-    if (context.userActivity) {
-      const activity = context.userActivity;
-      if (activity.visibleModals?.length > 0) {
-        contextText += `\n💬 ${activity.visibleModals.length} modal(s) open`;
-      }
-      if (activity.formState?.length > 0) {
-        const avgCompletion = activity.formState.reduce((sum, form) => sum + parseFloat(form.completionRate), 0) / activity.formState.length;
-        if (avgCompletion > 0) {
-          contextText += `\n📝 Form ${avgCompletion.toFixed(0)}% complete`;
-        }
-      }
-    }
-
-    // Add org/user context
-    if (context.salesforceMetadata) {
-      const meta = context.salesforceMetadata;
-      if (meta.orgInfo?.name) {
-        contextText += `\n🏢 Org: ${meta.orgInfo.name}`;
-      }
-      if (meta.permissions?.readOnly) {
-        contextText += `\n🔒 Read-only access`;
-      }
-    }
-
-    // Add helpful explanation
-    contextText += `\n\n💡 This context helps the AI understand your current Salesforce page to provide better assistance.`;
 
     this.contextInfo.textContent = contextText;
   }
@@ -323,19 +294,30 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
   }
 
   toggleContextInfo() {
-    const isCollapsed = this.contextInfo.style.maxHeight === '30px';
+    const isExpanded = this.contextInfo.classList.contains('expanded');
     
-    if (isCollapsed) {
-      // Expand
-      this.contextInfo.style.maxHeight = '120px';
-      this.contextInfo.style.overflow = 'auto';
-      this.contextInfo.title = 'Click to collapse context';
+    if (isExpanded) {
+      // Collapse to compact view
+      this.contextInfo.classList.remove('expanded');
+      this.contextInfo.title = 'Click to expand context details';
     } else {
-      // Collapse
-      this.contextInfo.style.maxHeight = '30px';
-      this.contextInfo.style.overflow = 'hidden';
-      this.contextInfo.title = 'Click to expand context';
+      // Expand to show more details
+      this.contextInfo.classList.add('expanded');
+      this.contextInfo.title = 'Click to collapse context';
+      
+      // Show expanded context information
+      this.displayExpandedContext();
     }
+  }
+
+  displayExpandedContext() {
+    // This will be called when user wants to see more context details
+    // For now, we'll keep it simple since the compact view is preferred
+    setTimeout(() => {
+      if (this.contextInfo.classList.contains('expanded')) {
+        this.contextInfo.classList.remove('expanded');
+      }
+    }, 3000); // Auto-collapse after 3 seconds
   }
 
   async saveConversationHistory() {

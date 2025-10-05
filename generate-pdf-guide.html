@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Salesforce Advisor - API Setup Guide</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none; }
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #0176d3 0%, #0099e0 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 2.5em;
+            font-weight: 700;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .option {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-left: 4px solid #0176d3;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .option h3 {
+            color: #0176d3;
+            margin-top: 0;
+        }
+        
+        .step {
+            background: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .step h4 {
+            color: #495057;
+            margin-top: 0;
+        }
+        
+        .highlight {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        
+        .cost-free {
+            background: #d4edda;
+            color: #155724;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .cost-paid {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        
+        .troubleshooting {
+            background: #e2e3e5;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        .tips {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        
+        code {
+            background: #f1f3f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        .button {
+            background: #0176d3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        
+        .button:hover {
+            background: #014486;
+        }
+        
+        ol, ul {
+            padding-left: 20px;
+        }
+        
+        li {
+            margin: 5px 0;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Salesforce Advisor</h1>
+        <p>API Setup Guide - Get Your AI Assistant Running in 5 Minutes</p>
+    </div>
+
+    <div class="no-print">
+        <button class="button" onclick="window.print()">📄 Download as PDF</button>
+        <button class="button" onclick="window.location.href='#option1'">🆓 Free Setup</button>
+        <button class="button" onclick="window.location.href='#troubleshooting'">🔧 Troubleshooting</button>
+    </div>
+
+    <div class="option" id="option1">
+        <h3>🎯 Option 1: OpenRouter (Recommended - FREE Models Available)</h3>
+        
+        <div class="step">
+            <h4>Step 1: Create OpenRouter Account</h4>
+            <ol>
+                <li>Go to <strong>OpenRouter.ai</strong></li>
+                <li>Click <strong>"Sign Up"</strong> (top right)</li>
+                <li>Use Google/GitHub or create account with email</li>
+                <li>✅ <strong>Account created - FREE!</strong></li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h4>Step 2: Get Your API Key</h4>
+            <ol>
+                <li>After login, go to <strong>Keys Page</strong></li>
+                <li>Click <strong>"Create Key"</strong></li>
+                <li>Name it: <code>Salesforce Advisor</code></li>
+                <li>Click <strong>"Create"</strong></li>
+                <li><strong>Copy the key</strong> (starts with <code>sk-or-v1-...</code>)</li>
+                <li>⚠️ <strong>Save it safely</strong> - you won't see it again!</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h4>Step 3: Configure Extension</h4>
+            <ol>
+                <li><strong>Right-click</strong> Salesforce Advisor extension icon</li>
+                <li>Select <strong>"Options"</strong></li>
+                <li><strong>AI Provider</strong>: Select "OpenRouter"</li>
+                <li><strong>API Key</strong>: Paste your key</li>
+                <li><strong>Model</strong>: Choose "DeepSeek Chat v3.1 (Free)" ⭐ <strong>RECOMMENDED</strong></li>
+                <li>Click <strong>"Save Settings"</strong></li>
+                <li>Click <strong>"Test Connection"</strong> to verify</li>
+                <li>✅ <strong>Ready to use!</strong></li>
+            </ol>
+        </div>
+
+        <div class="highlight">
+            <span class="cost-free">💰 Cost: FREE Models Available</span>
+            <ul>
+                <li><strong>DeepSeek Chat v3.1</strong>: Completely FREE</li>
+                <li><strong>NVIDIA Nemotron</strong>: Completely FREE</li>
+                <li><strong>Alibaba Tongyi</strong>: Completely FREE</li>
+                <li><strong>Meta Llama 3.1</strong>: Completely FREE</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="option">
+        <h3>🎯 Option 2: OpenAI (Premium)</h3>
+        
+        <div class="step">
+            <h4>Step 1: Create OpenAI Account</h4>
+            <ol>
+                <li>Go to <strong>OpenAI Platform</strong></li>
+                <li>Click <strong>"Sign up"</strong></li>
+                <li>Verify email and phone number</li>
+                <li>Add payment method (required)</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h4>Step 2: Get API Key</h4>
+            <ol>
+                <li>Go to <strong>API Keys</strong> page</li>
+                <li>Click <strong>"Create new secret key"</strong></li>
+                <li>Name it: <code>Salesforce Advisor</code></li>
+                <li><strong>Copy the key</strong> (starts with <code>sk-...</code>)</li>
+                <li>⚠️ <strong>Save it safely</strong></li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h4>Step 3: Configure Extension</h4>
+            <ol>
+                <li><strong>Right-click</strong> extension icon → <strong>"Options"</strong></li>
+                <li><strong>AI Provider</strong>: Select "OpenAI Direct"</li>
+                <li><strong>API Key</strong>: Paste your key</li>
+                <li><strong>Model</strong>: Choose "GPT-3.5 Turbo" (cheaper) or "GPT-4" (better)</li>
+                <li><strong>Save Settings</strong> and <strong>Test Connection</strong></li>
+            </ol>
+        </div>
+
+        <div class="highlight">
+            <span class="cost-paid">💰 Cost: Pay-per-use</span>
+            <ul>
+                <li><strong>GPT-3.5 Turbo</strong>: ~$0.002 per conversation</li>
+                <li><strong>GPT-4</strong>: ~$0.02 per conversation</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="troubleshooting" id="troubleshooting">
+        <h3>🔧 Troubleshooting</h3>
+        
+        <h4>❌ "Connection Failed"</h4>
+        <ul>
+            <li><strong>Check API key</strong>: Make sure it's copied correctly</li>
+            <li><strong>Check internet</strong>: Ensure stable connection</li>
+            <li><strong>Check credits</strong>: OpenAI requires payment method</li>
+            <li><strong>Try different model</strong>: Some models may be unavailable</li>
+        </ul>
+
+        <h4>❌ "Invalid API Key"</h4>
+        <ul>
+            <li><strong>Regenerate key</strong>: Create a new API key</li>
+            <li><strong>Check provider</strong>: Ensure correct provider selected</li>
+            <li><strong>Remove spaces</strong>: API key should have no extra spaces</li>
+        </ul>
+
+        <h4>❌ "Model Not Found"</h4>
+        <ul>
+            <li><strong>Try free models</strong>: DeepSeek, NVIDIA Nemotron, Alibaba Tongyi</li>
+            <li><strong>Check OpenRouter</strong>: Some models may be temporarily unavailable</li>
+            <li><strong>Use fallback</strong>: Extension automatically tries backup models</li>
+        </ul>
+    </div>
+
+    <div class="tips">
+        <h3>🚀 Getting Started Tips</h3>
+        
+        <h4>First Questions to Try:</h4>
+        <ol>
+            <li><em>"Help me understand this Salesforce page"</em></li>
+            <li><em>"Debug this error I'm seeing"</em></li>
+            <li><em>"What should I do next on this record?"</em></li>
+            <li><em>"Explain this validation rule"</em></li>
+            <li><em>"How do I create a flow for this process?"</em></li>
+        </ol>
+
+        <h4>Best Practices:</h4>
+        <ul>
+            <li>✅ <strong>Be specific</strong>: "Help with Lead conversion" vs "Help me"</li>
+            <li>✅ <strong>Include context</strong>: Extension automatically detects your page</li>
+            <li>✅ <strong>Ask follow-ups</strong>: Continue the conversation for better help</li>
+            <li>✅ <strong>Use privacy</strong>: Extension filters sensitive data automatically</li>
+        </ul>
+    </div>
+
+    <div class="tips">
+        <h3>🛡️ Privacy & Security</h3>
+        
+        <h4>What Gets Sent to AI:</h4>
+        <ul>
+            <li>✅ <strong>Page context</strong>: What Salesforce page you're on</li>
+            <li>✅ <strong>Your questions</strong>: What you type</li>
+            <li>✅ <strong>Filtered data</strong>: PII and sensitive info automatically removed</li>
+        </ul>
+
+        <h4>What NEVER Gets Sent:</h4>
+        <ul>
+            <li>❌ <strong>Personal data</strong>: Emails, phones, SSNs filtered out</li>
+            <li>❌ <strong>Salesforce IDs</strong>: Record IDs and session tokens filtered</li>
+            <li>❌ <strong>Passwords</strong>: Any sensitive form data filtered</li>
+            <li>❌ <strong>Your API key</strong>: Stored locally, never transmitted</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        <h3>🎉 You're Ready!</h3>
+        <p>Once configured, your Salesforce Advisor will:</p>
+        <ul style="text-align: left; display: inline-block;">
+            <li>🎯 <strong>Understand your context</strong> automatically</li>
+            <li>🛡️ <strong>Protect your privacy</strong> with advanced filtering</li>
+            <li>💬 <strong>Provide expert help</strong> for any Salesforce question</li>
+            <li>📚 <strong>Remember conversations</strong> for better assistance</li>
+            <li>⚡ <strong>Work instantly</strong> on any Salesforce page</li>
+        </ul>
+        <p><strong>Happy Salesforce-ing!</strong> 🚀</p>
+        <hr>
+        <p><em>Last updated: December 2024 • Version: 2.0.1</em></p>
+    </div>
+
+    <script>
+        // Smooth scrolling for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+    </script>
+</body>
+</html>
