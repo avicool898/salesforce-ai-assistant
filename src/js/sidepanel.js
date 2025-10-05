@@ -419,7 +419,7 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     this.responseArea.style.display = 'block';
   }
 
-  renderConversationThread() {
+  renderConversationThread(scrollToBottom = false) {
     if (this.currentConversation.length === 0) {
       this.threadMessages.innerHTML = '<div class="history-empty">Start a new conversation!</div>';
       return;
@@ -440,8 +440,15 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     }).join('');
 
     this.threadMessages.innerHTML = messagesHTML;
-    // Scroll to top for better UX when loading conversations
-    this.threadMessages.scrollTop = 0;
+    
+    // Smart scrolling based on context
+    if (scrollToBottom) {
+      // Scroll to bottom for new messages (user wants to see their new question/answer)
+      this.threadMessages.scrollTop = this.threadMessages.scrollHeight;
+    } else {
+      // Scroll to top for loaded conversations (user wants to read from beginning)
+      this.threadMessages.scrollTop = 0;
+    }
   }
 
   startNewConversation() {
@@ -504,7 +511,8 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     
     if (this.currentConversation.length > 1) {
       this.showConversationThread();
-      this.renderConversationThread();
+      // Scroll to bottom for new messages so user can see their new question/answer
+      this.renderConversationThread(true);
     }
   }
 
@@ -880,7 +888,8 @@ Need more specific help? Try describing your exact issue or what you're trying t
     
     // If we have a conversation thread, update it; otherwise use response area
     if (this.currentConversation.length > 1) {
-      this.renderConversationThread();
+      // Scroll to bottom when showing new responses so user can see the latest answer
+      this.renderConversationThread(true);
     } else {
       this.responseArea.innerHTML = formattedHtml;
       this.responseArea.scrollTop = 0;
