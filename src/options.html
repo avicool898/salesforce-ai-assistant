@@ -261,6 +261,52 @@
   </div>
 
   <div class="section">
+    <h2>Privacy & Security Settings</h2>
+    
+    <div class="form-group">
+      <label>
+        <input type="checkbox" id="removePII" checked> Remove Personal Information (PII)
+      </label>
+      <div class="help-text">Automatically filter emails, phone numbers, SSNs, addresses, and other personal data</div>
+    </div>
+    
+    <div class="form-group">
+      <label>
+        <input type="checkbox" id="removeSalesforceIds" checked> Filter Salesforce Record IDs
+      </label>
+      <div class="help-text">Remove or mask Salesforce record IDs, session tokens, and API keys</div>
+    </div>
+    
+    <div class="form-group">
+      <label>
+        <input type="checkbox" id="removeSensitiveFields" checked> Filter Sensitive Field Data
+      </label>
+      <div class="help-text">Remove data from fields containing passwords, tokens, financial info, etc.</div>
+    </div>
+    
+    <div class="form-group">
+      <label>
+        <input type="checkbox" id="showPrivacyReport" checked> Show Privacy Reports
+      </label>
+      <div class="help-text">Display privacy filtering reports when sensitive data is detected</div>
+    </div>
+    
+    <div class="form-group">
+      <label for="privacyLevel">Privacy Protection Level:</label>
+      <select id="privacyLevel">
+        <option value="standard">Standard (Recommended)</option>
+        <option value="strict">Strict (Maximum Protection)</option>
+        <option value="minimal">Minimal (Basic PII Only)</option>
+      </select>
+      <div class="help-text">
+        <strong>Standard:</strong> Filters PII, sensitive fields, and some Salesforce IDs<br>
+        <strong>Strict:</strong> Filters all potentially sensitive data including all IDs<br>
+        <strong>Minimal:</strong> Only filters obvious PII like emails and phone numbers
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
     <h2>Extension Settings</h2>
     
     <div class="form-group">

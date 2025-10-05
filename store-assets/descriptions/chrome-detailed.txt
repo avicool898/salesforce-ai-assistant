@@ -1,0 +1,38 @@
+🏢 Salesforce Advisor - Your Intelligent Salesforce Copilot
+
+Transform your Salesforce experience with AI-powered assistance that understands your context and protects your data.
+
+✨ KEY FEATURES:
+• Context-Aware Intelligence: Automatically detects page types, objects, and errors
+• Multi-AI Support: OpenRouter (Grok, Claude, GPT), OpenAI, Azure OpenAI
+• Smart Error Detection: Real-time identification and troubleshooting
+• Advanced Privacy Protection: Enterprise-grade PII and data filtering
+• Quick Actions: Pre-built prompts for common scenarios
+
+🛡️ PRIVACY & SECURITY:
+• Comprehensive PII filtering (emails, phones, SSNs, addresses)
+• Salesforce data protection (record IDs, session tokens, API keys)
+• Configurable privacy levels (Minimal, Standard, Strict)
+• Local processing - no external data storage
+• GDPR, HIPAA, and SOX compliance considerations
+
+🎯 PERFECT FOR:
+• Salesforce Administrators
+• Developers and Consultants
+• Business Users
+• Anyone working with Salesforce daily
+
+🚀 GET STARTED:
+1. Install the extension
+2. Configure your AI provider (free options available)
+3. Navigate to any Salesforce page
+4. Click the extension icon to start getting help
+
+🔧 SUPPORTED AI PROVIDERS:
+• OpenRouter: Access to 50+ models including Grok, Claude, GPT-4
+• OpenAI: Direct integration with GPT-3.5 and GPT-4
+• Azure OpenAI: Enterprise-grade AI services
+
+📞 SUPPORT:
+Need help? Visit our documentation or contact support.
+Privacy Policy: https://your-website.com/privacy

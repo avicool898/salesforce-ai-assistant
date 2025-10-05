@@ -1,0 +1,47 @@
+🏢 Salesforce Advisor - Your Intelligent Salesforce Copilot
+
+An enterprise-grade AI assistant designed specifically for Salesforce professionals. Get contextual help, debug errors, and optimize your workflows with advanced privacy protection.
+
+✨ CORE FEATURES:
+• Context-Aware Intelligence: Automatically understands your current Salesforce page
+• Multi-AI Provider Support: Choose from OpenRouter, OpenAI, or Azure OpenAI
+• Smart Error Detection: Identifies and helps resolve Salesforce errors
+• Privacy-First Design: Advanced PII and sensitive data filtering
+• Quick Actions: Pre-built prompts for common Salesforce scenarios
+
+🛡️ ENTERPRISE PRIVACY:
+• Automatic PII filtering (emails, phone numbers, SSNs, addresses)
+• Salesforce data protection (record IDs, session tokens, API keys)
+• Three privacy levels: Minimal, Standard, and Strict
+• Local data processing - no external storage
+• Compliance-ready for GDPR, HIPAA, and SOX requirements
+
+🎯 IDEAL FOR:
+• Salesforce Administrators managing complex orgs
+• Developers building on the Salesforce platform
+• Consultants working across multiple orgs
+• Business users needing Salesforce guidance
+
+🚀 QUICK START:
+1. Install the extension from Microsoft Edge Add-ons
+2. Configure your preferred AI provider
+3. Navigate to any Salesforce page
+4. Open the side panel to start getting intelligent assistance
+
+🔧 AI PROVIDER OPTIONS:
+• OpenRouter: Access to 50+ models including latest Grok, Claude, and GPT models
+• OpenAI: Direct integration with GPT-3.5 Turbo and GPT-4
+• Azure OpenAI: Enterprise-grade AI with your organization's Azure subscription
+
+📊 SUPPORTED SALESFORCE FEATURES:
+• Lightning Experience and Salesforce Classic
+• Setup pages and Object Manager
+• Record views, edit pages, and list views
+• Flow Builder and Process Builder
+• Apex development and debugging
+• Reports and Dashboards
+
+📞 SUPPORT & DOCUMENTATION:
+Comprehensive documentation and support available.
+Privacy Policy: https://your-website.com/privacy
+Terms of Service: https://your-website.com/terms

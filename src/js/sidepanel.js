@@ -18,6 +18,15 @@ class SalesforceAssistantSidePanel {
     this.conversationHistory = [];
     this.isHistoryVisible = false;
     this.currentConversationId = null;
+    
+    // Initialize privacy filter
+    this.privacyFilter = new PrivacyFilter();
+    this.privacySettings = {
+      removePII: true,
+      removeSalesforceIds: true,
+      removeSensitiveFields: true,
+      showPrivacyReport: true
+    };
 
     this.init();
   }
@@ -155,8 +164,18 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
       return;
     }
 
-    // Add user message to conversation
-    this.addMessageToConversation('user', prompt);
+    // Privacy check on user input
+    const inputValidation = this.privacyFilter.validateContentSafety(prompt);
+    if (inputValidation.riskLevel === 'HIGH_RISK') {
+      this.showPrivacyWarning(inputValidation, 'user input');
+      return;
+    }
+
+    // Filter user input before storing
+    const filteredPrompt = this.privacyFilter.filterText(prompt, this.privacySettings);
+    
+    // Add filtered user message to conversation
+    this.addMessageToConversation('user', filteredPrompt);
     
     // Clear input
     this.promptInput.value = '';
@@ -168,16 +187,32 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       const contextResponse = await chrome.tabs.sendMessage(tab.id, { action: 'getContext' });
 
-      // Prepare AI prompt with conversation context
-      const aiPrompt = this.buildAIPromptWithHistory(prompt, contextResponse);
+      // Apply privacy filtering to context data
+      const filteredContext = this.filterContextData(contextResponse);
 
-      // Call AI API
+      // Prepare AI prompt with filtered conversation context
+      const aiPrompt = this.buildAIPromptWithHistory(filteredPrompt, filteredContext);
+
+      // Final privacy check on complete prompt
+      const promptValidation = this.privacyFilter.validateContentSafety(aiPrompt);
+      if (promptValidation.riskLevel === 'HIGH_RISK') {
+        this.showPrivacyWarning(promptValidation, 'context data');
+        return;
+      }
+
+      // Call AI API with filtered data
       const aiResponse = await this.callAI(aiPrompt);
 
       // Add assistant response to conversation
       this.addMessageToConversation('assistant', aiResponse);
 
       this.showResponse(aiResponse);
+
+      // Show privacy report if enabled
+      if (this.privacySettings.showPrivacyReport && (inputValidation.issues.length > 0 || promptValidation.issues.length > 0)) {
+        this.showPrivacyReport(prompt, filteredPrompt, aiPrompt);
+      }
+
     } catch (error) {
       console.error('AI Analysis error:', error);
       const errorMessage = 'Sorry, I encountered an error while analyzing. Please try again.';
@@ -790,6 +825,76 @@ Need more specific help? Try describing your exact issue or what you're trying t
     }
   }
 
+  filterContextData(contextResponse) {
+    if (!contextResponse) return contextResponse;
+
+    const filtered = {
+      context: this.privacyFilter.filterObject(contextResponse.context, this.privacySettings),
+      content: this.privacyFilter.filterObject(contextResponse.content, this.privacySettings),
+      storage: this.filterStorageData(contextResponse.storage),
+      enhanced: contextResponse.enhanced
+    };
+
+    return filtered;
+  }
+
+  filterStorageData(storageData) {
+    if (!storageData) return storageData;
+
+    // Apply more aggressive filtering to storage data as it may contain sensitive cached information
+    const aggressiveSettings = {
+      ...this.privacySettings,
+      removePII: true,
+      removeSalesforceIds: true,
+      removeSensitiveFields: true
+    };
+
+    return this.privacyFilter.filterObject(storageData, aggressiveSettings);
+  }
+
+  showPrivacyWarning(validation, dataType) {
+    const warningMessage = `🔒 Privacy Protection Active
+
+High-risk content detected in ${dataType}:
+${validation.issues.map(issue => `• ${issue.category}: ${issue.count} instance(s)`).join('\n')}
+
+Your data has been automatically filtered to protect sensitive information. Please review your input and try again with non-sensitive information.
+
+Privacy is our priority - no sensitive data will be sent to AI services.`;
+
+    this.showResponse(warningMessage);
+  }
+
+  showPrivacyReport(originalPrompt, filteredPrompt, finalPrompt) {
+    const report = this.privacyFilter.generatePrivacyReport(originalPrompt, filteredPrompt);
+    const finalReport = this.privacyFilter.generatePrivacyReport(finalPrompt, finalPrompt);
+
+    if (report.issuesRemoved > 0 || finalReport.originalRisk !== 'SAFE') {
+      const reportMessage = `🛡️ Privacy Report
+
+Data Protection Summary:
+• Privacy Score: ${report.privacyScore}%
+• Issues Filtered: ${report.issuesRemoved}
+• Final Risk Level: ${finalReport.filteredRisk}
+
+Your data has been automatically protected before sending to AI services. All PII, Salesforce IDs, and sensitive information have been filtered or masked.`;
+
+      // Show privacy report in a subtle way
+      setTimeout(() => {
+        const privacyDiv = document.createElement('div');
+        privacyDiv.className = 'privacy-report';
+        privacyDiv.innerHTML = `<details><summary>🛡️ Privacy Report</summary><pre>${reportMessage}</pre></details>`;
+        privacyDiv.style.cssText = 'margin: 10px 0; padding: 8px; background: #f3f3f3; border-radius: 4px; font-size: 12px;';
+        
+        if (this.currentConversation.length > 1) {
+          this.threadMessages.appendChild(privacyDiv);
+        } else {
+          this.responseArea.appendChild(privacyDiv);
+        }
+      }, 1000);
+    }
+  }
+
   async getSettings() {
     return new Promise((resolve) => {
       chrome.storage.sync.get([
@@ -799,8 +904,13 @@ Need more specific help? Try describing your exact issue or what you're trying t
         'siteUrl',
         'siteName',
         'azureEndpoint',
-        'azureDeployment'
+        'azureDeployment',
+        'privacySettings'
       ], (result) => {
+        // Merge privacy settings
+        if (result.privacySettings) {
+          this.privacySettings = { ...this.privacySettings, ...result.privacySettings };
+        }
         resolve(result);
       });
     });

@@ -32,10 +32,14 @@ An enterprise-grade AI copilot designed for Salesforce professionals. Get intell
   - "Suggest next steps"
   - "Find documentation"
 
-### 🛡️ **Privacy & Security**
-- API keys stored securely using Chrome's encrypted storage
-- Configurable context depth to control data sharing
-- No data stored on external servers (except AI provider calls)
+### 🛡️ **Advanced Privacy & Security**
+- **Comprehensive PII Protection**: Automatically filters emails, phone numbers, SSNs, addresses, credit cards, and more
+- **Salesforce Data Security**: Filters record IDs, session tokens, API keys, and confidential Salesforce data
+- **Sensitive Field Detection**: Removes data from password fields, financial information, and other sensitive inputs
+- **Configurable Privacy Levels**: Choose from Minimal, Standard, or Strict protection modes
+- **Real-time Privacy Reports**: See what data was filtered before sending to AI services
+- **Zero Data Retention**: No sensitive data stored locally or on external servers
+- **API keys stored securely using Chrome's encrypted storage**
 
 ## 🚀 Quick Start
 
@@ -181,12 +185,92 @@ const response = await fetch('https://api.openai.com/v1/chat/completions', {
 ### Custom AI Service
 You can integrate with any AI service by implementing the `callAI` method with your specific API endpoints and authentication.
 
+## 🛡️ Privacy & Security
+
+Salesforce Advisor implements enterprise-grade privacy protection to ensure your sensitive data never leaves your control inappropriately.
+
+### Automatic Data Protection
+
+The extension automatically filters sensitive information before sending any data to AI services:
+
+#### Personal Information (PII)
+- **Email addresses**: `john@company.com` → `[EMAIL_REDACTED]`
+- **Phone numbers**: `(555) 123-4567` → `[PHONE_REDACTED]`
+- **Social Security Numbers**: `123-45-6789` → `[SSN_REDACTED]`
+- **Credit card numbers**: `4532 1234 5678 9012` → `[CREDITCARD_REDACTED]`
+- **Addresses**: `123 Main St, City, NY 12345` → `[ADDRESS_REDACTED]`
+- **Dates of birth**: `01/15/1985` → `[DATEOFBIRTH_REDACTED]`
+
+#### Salesforce Confidential Data
+- **Record IDs**: `0031234567890ABC` → `[RECORDID_REDACTED]`
+- **Session tokens**: `00D123...xyz` → `[SESSIONID_REDACTED]`
+- **API keys**: `sk-1234567890...` → `[APIKEY_REDACTED]`
+- **User IDs**: `005123456789012` → `[USERID_REDACTED]`
+- **Org IDs**: `00D123456789012` → `[ORGID_REDACTED]`
+
+#### Sensitive Form Fields
+- Password fields
+- Financial information
+- Authentication tokens
+- Any field containing "confidential", "secret", or "private"
+
+### Privacy Configuration
+
+#### Privacy Levels
+1. **Minimal**: Only filters obvious PII like emails and phone numbers
+2. **Standard** (Recommended): Filters PII, sensitive fields, and some Salesforce IDs
+3. **Strict**: Maximum protection - filters all potentially sensitive data
+
+#### Configurable Options
+- ✅ **Remove PII**: Filter personal information
+- ✅ **Filter Salesforce IDs**: Remove/mask Salesforce record identifiers
+- ✅ **Filter Sensitive Fields**: Remove data from sensitive form fields
+- ✅ **Show Privacy Reports**: Display filtering reports when sensitive data is detected
+
+### Privacy Reports
+
+When sensitive data is detected, the extension shows a privacy report:
+
+```
+🛡️ Privacy Report
+
+Data Protection Summary:
+• Privacy Score: 95%
+• Issues Filtered: 3
+• Final Risk Level: SAFE
+
+Your data has been automatically protected before sending to AI services.
+```
+
+### Testing Privacy Protection
+
+You can test the privacy filtering using the included test page:
+1. Open `src/test-privacy.html` in your browser
+2. View how different types of sensitive data are filtered
+3. See validation reports for risk assessment
+
+### Data Flow Security
+
+1. **Local Processing**: All privacy filtering happens locally in your browser
+2. **No Data Storage**: Sensitive data is never stored locally or remotely
+3. **Encrypted Storage**: API keys stored using Chrome's encrypted storage
+4. **HTTPS Only**: All AI service communications use secure HTTPS
+5. **No Tracking**: Extension doesn't track or collect user behavior
+
+### Compliance Features
+
+- **GDPR Compliant**: Automatic PII detection and filtering
+- **HIPAA Considerations**: Healthcare data protection patterns
+- **SOX Compliance**: Financial data filtering
+- **Enterprise Ready**: Configurable privacy levels for different security requirements
+
 ## Security Considerations
 
 - API keys are stored locally using Chrome's secure storage
-- Sensitive Salesforce data can be filtered before sending to AI
+- All sensitive data is filtered before AI processing
 - All communication uses HTTPS
-- No data is stored on external servers (except AI provider calls)
+- No data is stored on external servers (except filtered AI provider calls)
+- Privacy filtering happens locally - no data sent to external privacy services
 
 ## Troubleshooting
 

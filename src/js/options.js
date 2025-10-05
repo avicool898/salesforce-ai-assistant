@@ -14,6 +14,12 @@ class OptionsManager {
       azureDeployment: document.getElementById('azureDeployment'),
       contextDepth: document.getElementById('contextDepth'),
       autoAnalyze: document.getElementById('autoAnalyze'),
+      // Privacy settings
+      removePII: document.getElementById('removePII'),
+      removeSalesforceIds: document.getElementById('removeSalesforceIds'),
+      removeSensitiveFields: document.getElementById('removeSensitiveFields'),
+      showPrivacyReport: document.getElementById('showPrivacyReport'),
+      privacyLevel: document.getElementById('privacyLevel'),
       saveBtn: document.getElementById('saveBtn'),
       testBtn: document.getElementById('testBtn'),
       status: document.getElementById('status')
@@ -31,6 +37,11 @@ class OptionsManager {
     // Provider selection
     this.elements.aiProvider.addEventListener('change', () => {
       this.toggleProviderConfig();
+    });
+
+    // Privacy level presets
+    this.elements.privacyLevel.addEventListener('change', () => {
+      this.applyPrivacyPreset();
     });
 
     // Save settings
@@ -73,8 +84,41 @@ class OptionsManager {
     this.elements.contextDepth.value = settings.contextDepth || 'medium';
     this.elements.autoAnalyze.checked = settings.autoAnalyze || false;
     
+    // Load privacy settings
+    const privacySettings = settings.privacySettings || {};
+    this.elements.removePII.checked = privacySettings.removePII !== false; // Default true
+    this.elements.removeSalesforceIds.checked = privacySettings.removeSalesforceIds !== false; // Default true
+    this.elements.removeSensitiveFields.checked = privacySettings.removeSensitiveFields !== false; // Default true
+    this.elements.showPrivacyReport.checked = privacySettings.showPrivacyReport !== false; // Default true
+    this.elements.privacyLevel.value = privacySettings.privacyLevel || 'standard';
+    
     // Show correct provider config
     this.toggleProviderConfig();
+  }
+
+  applyPrivacyPreset() {
+    const level = this.elements.privacyLevel.value;
+    
+    switch (level) {
+      case 'minimal':
+        this.elements.removePII.checked = true;
+        this.elements.removeSalesforceIds.checked = false;
+        this.elements.removeSensitiveFields.checked = false;
+        this.elements.showPrivacyReport.checked = false;
+        break;
+      case 'standard':
+        this.elements.removePII.checked = true;
+        this.elements.removeSalesforceIds.checked = true;
+        this.elements.removeSensitiveFields.checked = true;
+        this.elements.showPrivacyReport.checked = true;
+        break;
+      case 'strict':
+        this.elements.removePII.checked = true;
+        this.elements.removeSalesforceIds.checked = true;
+        this.elements.removeSensitiveFields.checked = true;
+        this.elements.showPrivacyReport.checked = true;
+        break;
+    }
   }
 
   async saveSettings() {
@@ -101,9 +145,26 @@ class OptionsManager {
       settings.azureDeployment = this.elements.azureDeployment.value.trim();
     }
 
+    // Add privacy settings
+    const privacyLevel = this.elements.privacyLevel.value;
+    settings.privacySettings = {
+      removePII: this.elements.removePII.checked,
+      removeSalesforceIds: this.elements.removeSalesforceIds.checked,
+      removeSensitiveFields: this.elements.removeSensitiveFields.checked,
+      showPrivacyReport: this.elements.showPrivacyReport.checked,
+      privacyLevel: privacyLevel,
+      // Apply level-specific overrides for strict mode
+      ...(privacyLevel === 'strict' && {
+        removePII: true,
+        removeSalesforceIds: true,
+        removeSensitiveFields: true,
+        maskingChar: '[REDACTED]'
+      })
+    };
+
     try {
       await chrome.storage.sync.set(settings);
-      this.showStatus('Settings saved successfully!', 'success');
+      this.showStatus('Settings saved successfully! Privacy protection is now active.', 'success');
     } catch (error) {
       this.showStatus(`Error saving settings: ${error.message}`, 'error');
     }
@@ -295,7 +356,8 @@ class OptionsManager {
         'azureEndpoint',
         'azureDeployment',
         'contextDepth',
-        'autoAnalyze'
+        'autoAnalyze',
+        'privacySettings'
       ], (result) => {
         resolve(result);
       });

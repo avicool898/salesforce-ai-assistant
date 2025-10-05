@@ -6,6 +6,16 @@ class SalesforceContextAnalyzer {
     this.storageData = {};
     this.mutationObserver = null;
     this.eventListeners = [];
+    
+    // Initialize privacy filter
+    this.privacyFilter = new PrivacyFilter();
+    this.privacySettings = {
+      removePII: true,
+      removeSalesforceIds: false, // Keep some Salesforce IDs for context
+      removeSensitiveFields: true,
+      maskingChar: '[FILTERED]'
+    };
+    
     this.init();
   }
 
@@ -892,15 +902,113 @@ class SalesforceContextAnalyzer {
         this.detectContext(); // Refresh context
         this.analyzeStorageData(); // Refresh storage analysis
         
-        sendResponse({
+        // Apply privacy filtering to all data before sending
+        const filteredResponse = this.applyPrivacyFiltering({
           context: this.context,
           content: this.extractPageContent(),
           storage: this.storageData,
           enhanced: true // Flag to indicate enhanced context
         });
+        
+        sendResponse(filteredResponse);
       }
       return true;
     });
+  }
+
+  applyPrivacyFiltering(data) {
+    try {
+      // Create a deep copy to avoid modifying original data
+      const filtered = JSON.parse(JSON.stringify(data));
+      
+      // Filter context data
+      if (filtered.context) {
+        filtered.context = this.privacyFilter.filterObject(filtered.context, this.privacySettings);
+        
+        // Special handling for URLs - keep structure but filter sensitive parts
+        if (filtered.context.url) {
+          filtered.context.url = this.filterURL(filtered.context.url);
+        }
+        
+        // Filter error messages while preserving error types
+        if (filtered.context.errors) {
+          filtered.context.errors = filtered.context.errors.map(error => ({
+            ...error,
+            message: this.privacyFilter.filterText(error.message, this.privacySettings)
+          }));
+        }
+      }
+      
+      // Filter page content
+      if (filtered.content) {
+        filtered.content = this.privacyFilter.filterObject(filtered.content, this.privacySettings);
+        
+        // Special handling for form fields - preserve structure but filter values
+        if (filtered.content.fields) {
+          filtered.content.fields = filtered.content.fields.map(field => ({
+            ...field,
+            value: field.value ? '[FILTERED]' : field.value,
+            label: field.label // Keep labels for context
+          }));
+        }
+      }
+      
+      // Apply aggressive filtering to storage data
+      if (filtered.storage) {
+        const aggressiveSettings = {
+          ...this.privacySettings,
+          removeSalesforceIds: true, // Remove all IDs from storage
+          removePII: true
+        };
+        filtered.storage = this.privacyFilter.filterObject(filtered.storage, aggressiveSettings);
+      }
+      
+      return filtered;
+    } catch (error) {
+      console.warn('Privacy filtering failed, returning minimal safe data:', error);
+      
+      // Return minimal safe data if filtering fails
+      return {
+        context: {
+          pageType: data.context?.pageType || 'Unknown',
+          userInterface: data.context?.userInterface || 'Unknown',
+          errors: [],
+          timestamp: Date.now()
+        },
+        content: {},
+        storage: {},
+        enhanced: true,
+        privacyFiltered: true
+      };
+    }
+  }
+
+  filterURL(url) {
+    try {
+      const urlObj = new URL(url);
+      
+      // Keep domain and basic path structure, filter sensitive parameters
+      const filteredParams = new URLSearchParams();
+      
+      // Keep only safe parameters
+      const safeParams = ['retURL', 'setupid', 'type', 'mode'];
+      urlObj.searchParams.forEach((value, key) => {
+        if (safeParams.includes(key)) {
+          filteredParams.set(key, value);
+        } else if (key.toLowerCase().includes('id') && value.length > 10) {
+          // Filter long ID values but keep parameter name for context
+          filteredParams.set(key, '[FILTERED_ID]');
+        }
+      });
+      
+      // Reconstruct URL with filtered parameters
+      urlObj.search = filteredParams.toString();
+      
+      return urlObj.toString();
+    } catch (error) {
+      // If URL parsing fails, return a generic safe URL
+      return 'https://[FILTERED_DOMAIN]/[FILTERED_PATH]';
+    }
   }
 
   // Cleanup method

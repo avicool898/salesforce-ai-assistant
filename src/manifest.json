@@ -24,7 +24,7 @@
         "https://*.force.com/*",
         "https://*.lightning.force.com/*"
       ],
-      "js": ["js/content.js"],
+      "js": ["js/privacy-filter.js", "js/content.js"],
       "run_at": "document_idle"
     }
   ],
