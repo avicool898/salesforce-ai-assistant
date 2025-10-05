@@ -69,7 +69,9 @@ class SalesforceAssistantSidePanel {
   }
 
   displayContext(context) {
-    let contextText = `📍 ${context.pageType}${context.currentObject ? ` - ${context.currentObject}` : ''}
+    // Create a more informative context display
+    let contextText = `🔍 SALESFORCE PAGE CONTEXT
+📍 ${context.pageType}${context.currentObject ? ` - ${context.currentObject}` : ''}
 🖥️ ${context.userInterface} Experience
 ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected` : '✅ No errors detected'}`;
 
@@ -111,6 +113,9 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
         contextText += `\n🔒 Read-only access`;
       }
     }
+
+    // Add helpful explanation
+    contextText += `\n\n💡 This context helps the AI understand your current Salesforce page to provide better assistance.`;
 
     this.contextInfo.textContent = contextText;
   }
@@ -154,6 +159,11 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     // New conversation button
     this.newConversationBtn.addEventListener('click', () => {
       this.startNewConversation();
+    });
+
+    // Context info toggle
+    this.contextInfo.addEventListener('click', () => {
+      this.toggleContextInfo();
     });
   }
 
@@ -312,6 +322,22 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     chrome.storage.local.set({ lastSessionTime: Date.now() });
   }
 
+  toggleContextInfo() {
+    const isCollapsed = this.contextInfo.style.maxHeight === '30px';
+    
+    if (isCollapsed) {
+      // Expand
+      this.contextInfo.style.maxHeight = '120px';
+      this.contextInfo.style.overflow = 'auto';
+      this.contextInfo.title = 'Click to collapse context';
+    } else {
+      // Collapse
+      this.contextInfo.style.maxHeight = '30px';
+      this.contextInfo.style.overflow = 'hidden';
+      this.contextInfo.title = 'Click to expand context';
+    }
+  }
+
   async saveConversationHistory() {
     try {
       await chrome.storage.local.set({
@@ -414,7 +440,8 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     }).join('');
 
     this.threadMessages.innerHTML = messagesHTML;
-    this.threadMessages.scrollTop = this.threadMessages.scrollHeight;
+    // Scroll to top for better UX when loading conversations
+    this.threadMessages.scrollTop = 0;
   }
 
   startNewConversation() {

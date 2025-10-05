@@ -113,21 +113,41 @@
     }
     
     .context-info {
-      background: white;
-      border: 1px solid #e5e5e5;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border: 1px solid #dee2e6;
       border-left: 4px solid #0176d3;
       padding: 12px;
-      border-radius: 4px;
+      border-radius: 6px;
       margin-bottom: 16px;
-      font-size: 12px;
-      color: #444;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      font-size: 11px;
+      color: #495057;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
       flex-shrink: 0;
+      line-height: 1.4;
+      white-space: pre-line;
+      max-height: 120px;
+      overflow-y: auto;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .context-info:hover {
+      background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+      box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
     }
     
     .context-info::before {
-      content: '📍';
-      margin-right: 6px;
+      content: '';
+      margin-right: 0;
+    }
+    
+    /* Make context info collapsible on small screens */
+    @media (max-height: 600px) {
+      .context-info {
+        max-height: 80px;
+        font-size: 10px;
+      }
     }
     
     /* Conversation History Styles */
@@ -586,7 +606,7 @@
   </div>
   
   <div class="main-content">
-    <div class="context-info" id="contextInfo">
+    <div class="context-info" id="contextInfo" title="Click to toggle context visibility">
       Detecting Salesforce context...
     </div>
     
