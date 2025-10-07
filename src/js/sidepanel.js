@@ -35,6 +35,104 @@ class SalesforceAssistantSidePanel {
     await this.loadContext();
     this.setupEventListeners();
     this.loadSettings();
+    this.initializeDeveloperMode();
+    this.setupPageChangeListener();
+  }
+
+  setupPageChangeListener() {
+    // Listen for page change notifications from content script
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      if (request.action === 'pageChanged') {
+        console.log('Sidepanel: Page change detected, updating context');
+        this.handlePageChange(request.context, request.url);
+        sendResponse({ received: true });
+      }
+    });
+  }
+
+  async handlePageChange(newContext, newUrl) {
+    // Update context display
+    if (newContext) {
+      this.displayContext(newContext, {
+        semanticComponents: { pageIntent: newContext.pageIntent || 'view' },
+        conversationalContext: { userLevel: 'unknown' }
+      });
+    }
+
+    // Show page change notification
+    this.showPageChangeNotification(newUrl);
+    
+    // Refresh full context after a delay
+    setTimeout(() => {
+      this.loadContext();
+    }, 1000);
+  }
+
+  showPageChangeNotification(newUrl) {
+    // Create a subtle notification about page change
+    const notification = document.createElement('div');
+    notification.className = 'page-change-notification';
+    notification.innerHTML = `
+      <div style="
+        background: #e3f2fd;
+        border: 1px solid #2196f3;
+        border-radius: 4px;
+        padding: 8px 12px;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: #1976d2;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      ">
+        <span>🔄</span>
+        <span>Page updated - Context refreshed</span>
+      </div>
+    `;
+
+    // Insert at the top of main content
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      mainContent.insertBefore(notification, mainContent.firstChild);
+      
+      // Remove notification after 3 seconds
+      setTimeout(() => {
+        if (notification.parentNode) {
+          notification.parentNode.removeChild(notification);
+        }
+      }, 3000);
+    }
+  }
+
+  initializeDeveloperMode() {
+    // Hide context panel by default
+    this.contextInfo.style.display = 'none';
+    
+    // Hide developer mode button by default
+    const devBtn = document.getElementById('devBtn');
+    devBtn.style.display = 'none';
+    
+    // Check if creator mode is enabled (secret key combination)
+    chrome.storage.local.get(['creatorMode', 'developerMode'], (result) => {
+      if (result.creatorMode) {
+        devBtn.style.display = 'block';
+        
+        // Show context panel if developer mode is enabled
+        if (result.developerMode) {
+          this.contextInfo.style.display = 'block';
+          devBtn.classList.add('active');
+        }
+      }
+    });
+    
+    // Listen for secret key combination (Ctrl+Shift+D) to enable creator mode
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        chrome.storage.local.set({ creatorMode: true });
+        devBtn.style.display = 'block';
+        console.log('Creator mode enabled - you can now toggle developer mode');
+      }
+    });
   }
 
   async loadContext() {
@@ -51,8 +149,13 @@ class SalesforceAssistantSidePanel {
       const response = await chrome.tabs.sendMessage(tab.id, { action: 'getContext' });
 
       if (response) {
-        this.displayContext(response.context);
+        this.displayContext(response.context, {
+          semanticComponents: response.semanticComponents,
+          conversationalContext: response.conversationalContext,
+          knowledgeContext: response.knowledgeContext
+        });
         this.pageContent = response.content;
+        this.enhancedContext = response; // Store for AI prompts
       }
     } catch (error) {
       console.error('Error loading context:', error);
@@ -68,60 +171,63 @@ class SalesforceAssistantSidePanel {
     );
   }
 
-  displayContext(context) {
-    let contextText = `📍 ${context.pageType}${context.currentObject ? ` - ${context.currentObject}` : ''}
-🖥️ ${context.userInterface} Experience
-${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected` : '✅ No errors detected'}`;
+  displayContext(context, enhancedData = {}) {
+    const { semanticComponents, conversationalContext, knowledgeContext } = enhancedData;
+    
+    // Create a focused context display showing actual page content
+    let contextText = `📍 ${context.pageType}
+📄 ${context.pageHeader || 'Page'}`;
 
-    // Add enhanced context if available
-    if (context.urlMetadata) {
-      const meta = context.urlMetadata;
-      if (meta.action && meta.action !== 'view') {
-        contextText += `\n🎯 Action: ${meta.action.charAt(0).toUpperCase() + meta.action.slice(1)}`;
-      }
-      if (meta.recordId) {
-        contextText += `\n🆔 Record: ${meta.recordId.substring(0, 8)}...`;
-      }
-      if (meta.app && meta.app !== 'Standard') {
-        contextText += `\n📱 App: ${meta.app}`;
-      }
+    // Add main content information
+    if (semanticComponents?.primaryContent) {
+      contextText += `\n🎯 ${semanticComponents.primaryContent}`;
     }
 
-    // Add user activity hints
-    if (context.userActivity) {
-      const activity = context.userActivity;
-      if (activity.visibleModals?.length > 0) {
-        contextText += `\n💬 ${activity.visibleModals.length} modal(s) open`;
-      }
-      if (activity.formState?.length > 0) {
-        const avgCompletion = activity.formState.reduce((sum, form) => sum + parseFloat(form.completionRate), 0) / activity.formState.length;
-        if (avgCompletion > 0) {
-          contextText += `\n📝 Form ${avgCompletion.toFixed(0)}% complete`;
-        }
-      }
+    // Add key content terms if available
+    if (context.mainContentSummary?.keyTerms?.length > 0) {
+      const keyTerms = context.mainContentSummary.keyTerms.slice(0, 2).join(', ');
+      contextText += `\n📋 ${keyTerms}`;
     }
 
-    // Add org/user context
-    if (context.salesforceMetadata) {
-      const meta = context.salesforceMetadata;
-      if (meta.orgInfo?.name) {
-        contextText += `\n🏢 Org: ${meta.orgInfo.name}`;
-      }
-      if (meta.permissions?.readOnly) {
-        contextText += `\n🔒 Read-only access`;
-      }
+    // Add available actions
+    if (semanticComponents?.availableActions?.length > 0) {
+      const actions = semanticComponents.availableActions.slice(0, 2).join(', ');
+      contextText += `\n⚡ ${actions}`;
     }
+
+    // Add page intent
+    if (semanticComponents?.pageIntent) {
+      contextText += `\n🔍 ${semanticComponents.pageIntent.charAt(0).toUpperCase() + semanticComponents.pageIntent.slice(1)}`;
+    }
+
+    // Add status indicators
+    if (context.errors?.length > 0) {
+      contextText += `\n⚠️ ${context.errors.length} error(s)`;
+    } else {
+      contextText += `\n✅ Ready`;
+    }
+
+    // Add interface type
+    contextText += `\n🖥️ ${context.userInterface}`;
 
     this.contextInfo.textContent = contextText;
   }
 
   setupEventListeners() {
-    // Quick action buttons
+    // Quick action buttons with enhanced contextual suggestions
     document.querySelectorAll('.quick-action').forEach(btn => {
       btn.addEventListener('click', () => {
         this.promptInput.value = btn.dataset.prompt;
         this.promptInput.focus();
       });
+    });
+
+    // Update quick actions based on context
+    this.updateContextualQuickActions();
+
+    // Refresh context button
+    document.getElementById('refreshContextBtn').addEventListener('click', () => {
+      this.refreshContext();
     });
 
     // Analyze button
@@ -155,6 +261,18 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     this.newConversationBtn.addEventListener('click', () => {
       this.startNewConversation();
     });
+
+    // Remove context info toggle - show normally
+
+    // Developer mode toggle
+    document.getElementById('devBtn').addEventListener('click', () => {
+      this.toggleDeveloperMode();
+    });
+
+    // API setup guide button
+    document.getElementById('apiBtn').addEventListener('click', () => {
+      this.openAPIGuide();
+    });
   }
 
   async analyzeWithAI() {
@@ -183,14 +301,22 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     this.setLoading(true);
 
     try {
-      // Get current tab context
+      // Always get fresh context before AI analysis
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      // Force content script to refresh context
+      await chrome.tabs.sendMessage(tab.id, { action: 'refreshContext' });
+      
+      // Get updated context
       const contextResponse = await chrome.tabs.sendMessage(tab.id, { action: 'getContext' });
 
       // Apply privacy filtering to context data
       const filteredContext = this.filterContextData(contextResponse);
 
-      // Prepare AI prompt with filtered conversation context
+      // Store enhanced context for future use
+      this.enhancedContext = filteredContext;
+
+      // Prepare AI prompt with enhanced contextual understanding
       const aiPrompt = this.buildAIPromptWithHistory(filteredPrompt, filteredContext);
 
       // Final privacy check on complete prompt
@@ -200,8 +326,8 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
         return;
       }
 
-      // Call AI API with filtered data
-      const aiResponse = await this.callAI(aiPrompt);
+      // Call AI API with filtered data (with retry for timeouts)
+      const aiResponse = await this.callAIWithRetry(aiPrompt);
 
       // Add assistant response to conversation
       this.addMessageToConversation('assistant', aiResponse);
@@ -226,19 +352,116 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
   // Copy all the conversation history methods from popup.js
   async loadConversationHistory() {
     try {
-      const result = await chrome.storage.local.get(['conversationHistory', 'currentConversation']);
+      const result = await chrome.storage.local.get([
+        'conversationHistory', 
+        'currentConversation', 
+        'lastSessionTime'
+      ]);
+      
       this.conversationHistory = result.conversationHistory || [];
       this.currentConversation = result.currentConversation || [];
       
-      if (this.currentConversation.length > 0) {
+      // Check if this is a new session (more than 30 minutes since last activity)
+      const lastSessionTime = result.lastSessionTime || 0;
+      const currentTime = Date.now();
+      const sessionTimeout = 30 * 60 * 1000; // 30 minutes
+      const isNewSession = (currentTime - lastSessionTime) > sessionTimeout;
+      
+      // If it's a new session, start fresh but show history if available
+      if (isNewSession) {
+        this.startFreshSession();
+      } else if (this.currentConversation.length > 0) {
+        // Continue existing session only if recent
         this.showConversationThread();
         this.renderConversationThread();
       }
       
+      // Always render history list for easy access
       this.renderHistoryList();
+      
+      // Update last session time
+      this.updateSessionTime();
+      
     } catch (error) {
       console.error('Failed to load conversation history:', error);
     }
+  }
+
+  startFreshSession() {
+    // Clear current conversation but keep history
+    this.currentConversation = [];
+    this.currentConversationId = null;
+    
+    // Hide conversation thread and show fresh interface
+    this.hideConversationThread();
+    
+    // Show welcome message
+    this.responseArea.innerHTML = `
+      <div class="welcome-message">
+        <h3>👋 Welcome back!</h3>
+        <p>Ready to help with your Salesforce tasks.</p>
+        ${this.conversationHistory.length > 0 ? 
+          '<div class="welcome-tip"><strong>💡 Tip:</strong> Click the history button 📜 to view previous conversations or start typing below for a new conversation.</div>' : 
+          '<div class="welcome-tip">Start by asking a question or describing what you need help with.</div>'
+        }
+      </div>
+    `;
+    
+    // Show history panel if there are previous conversations
+    if (this.conversationHistory.length > 0) {
+      this.showHistoryHint();
+    }
+    
+    // Focus on input for immediate use
+    setTimeout(() => {
+      this.promptInput.focus();
+    }, 100);
+  }
+
+  showHistoryHint() {
+    // Briefly show history panel as a hint, then hide it
+    this.historyPanel.style.display = 'block';
+    this.historyPanel.classList.add('history-hint');
+    this.isHistoryVisible = true;
+    
+    // Auto-hide after 4 seconds unless user interacts
+    setTimeout(() => {
+      if (this.isHistoryVisible && !this.historyPanel.matches(':hover')) {
+        this.historyPanel.style.display = 'none';
+        this.historyPanel.classList.remove('history-hint');
+        this.isHistoryVisible = false;
+      }
+    }, 4000);
+  }
+
+  updateSessionTime() {
+    chrome.storage.local.set({ lastSessionTime: Date.now() });
+  }
+
+  // Removed collapsible context logic - showing normally now
+
+  toggleDeveloperMode() {
+    chrome.storage.local.get(['developerMode'], (result) => {
+      const newMode = !result.developerMode;
+      chrome.storage.local.set({ developerMode: newMode });
+      
+      const devBtn = document.getElementById('devBtn');
+      if (newMode) {
+        this.contextInfo.style.display = 'block';
+        devBtn.classList.add('active');
+        devBtn.title = 'Developer Mode: ON (Click to hide context)';
+      } else {
+        this.contextInfo.style.display = 'none';
+        devBtn.classList.remove('active');
+        devBtn.title = 'Developer Mode: OFF (Click to show context)';
+      }
+    });
+  }
+
+  openAPIGuide() {
+    // Create and open the API setup guide in a new tab
+    const guideUrl = chrome.runtime.getURL('generate-pdf-guide.html');
+    chrome.tabs.create({ url: guideUrl });
   }
 
   async saveConversationHistory() {
@@ -300,6 +523,15 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
       this.renderConversationThread();
       this.historyPanel.style.display = 'none';
       this.isHistoryVisible = false;
+      
+      // Update session time when loading a conversation
+      this.updateSessionTime();
+      
+      // Show a subtle indicator that this is a loaded conversation
+      const threadHeader = document.querySelector('.thread-header h3');
+      if (threadHeader) {
+        threadHeader.innerHTML = `📖 Loaded Conversation <small style="font-weight: normal; opacity: 0.7;">(${new Date(conversation.timestamp).toLocaleDateString()})</small>`;
+      }
     }
   }
 
@@ -313,19 +545,19 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     this.responseArea.style.display = 'block';
   }
 
-  renderConversationThread() {
+  renderConversationThread(scrollToBottom = false) {
     if (this.currentConversation.length === 0) {
       this.threadMessages.innerHTML = '<div class="history-empty">Start a new conversation!</div>';
       return;
     }
 
-    const messagesHTML = this.currentConversation.map(message => {
+    const messagesHTML = this.currentConversation.map((message, index) => {
       const time = new Date(message.timestamp).toLocaleString();
       const isUser = message.role === 'user';
       const content = isUser ? message.content : this.formatResponse(message.content);
       
       return `
-        <div class="message ${isUser ? 'user' : 'assistant'}">
+        <div class="message ${isUser ? 'user' : 'assistant'}" data-message-index="${index}">
           <div class="message-header">${isUser ? '👤 You' : '🤖 Salesforce Advisor'}</div>
           <div class="message-content">${content}</div>
           <div class="message-time">${time}</div>
@@ -334,16 +566,241 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     }).join('');
 
     this.threadMessages.innerHTML = messagesHTML;
-    this.threadMessages.scrollTop = this.threadMessages.scrollHeight;
+    
+    // Smart scrolling based on context
+    if (scrollToBottom) {
+      // Scroll to show the most recent message in a comfortable position
+      this.scrollToRecentMessage();
+    } else {
+      // Scroll to top for loaded conversations (user wants to read from beginning)
+      this.threadMessages.scrollTop = 0;
+    }
+  }
+
+  scrollToRecentMessage() {
+    // Wait for DOM to update, then scroll to show the most recent message
+    setTimeout(() => {
+      const messages = this.threadMessages.querySelectorAll('.message');
+      if (messages.length === 0) return;
+      
+      // Get the most recent message (last one)
+      const lastMessage = messages[messages.length - 1];
+      
+      // Simple approach: scroll to show the recent message at the bottom
+      // but ensure it's fully visible with some padding
+      const containerHeight = this.threadMessages.clientHeight;
+      const messageTop = lastMessage.offsetTop;
+      const messageHeight = lastMessage.offsetHeight;
+      
+      // Position so the message is visible at the bottom with some padding
+      const targetScroll = messageTop - containerHeight + messageHeight + 20; // 20px padding
+      
+      // Ensure we don't scroll past the content or before the start
+      const maxScroll = this.threadMessages.scrollHeight - containerHeight;
+      const finalScroll = Math.min(Math.max(0, targetScroll), maxScroll);
+      
+      // Smooth scroll to the position
+      try {
+        this.threadMessages.scrollTo({
+          top: finalScroll,
+          behavior: 'smooth'
+        });
+      } catch (error) {
+        // Fallback for browsers that don't support smooth scrolling
+        this.threadMessages.scrollTop = finalScroll;
+      }
+      
+      // Briefly highlight the most recent message to draw attention
+      lastMessage.style.transition = 'background-color 0.3s ease';
+      lastMessage.style.backgroundColor = 'rgba(1, 118, 211, 0.1)';
+      
+      setTimeout(() => {
+        lastMessage.style.backgroundColor = '';
+      }, 1500);
+      
+    }, 100); // Increased timeout to ensure DOM is ready
   }
 
   startNewConversation() {
     this.currentConversation = [];
     this.currentConversationId = null;
     this.hideConversationThread();
-    this.responseArea.innerHTML = "Ready to help! Ask me about the current Salesforce page or describe what you're working on.";
+    
+    // Show fresh start message
+    this.responseArea.innerHTML = `
+      <div class="welcome-message">
+        <h3>✨ New Conversation</h3>
+        <p>Ready to help! Ask me about the current Salesforce page or describe what you're working on.</p>
+      </div>
+    `;
+    
+    // Hide history panel
+    this.historyPanel.style.display = 'none';
+    this.isHistoryVisible = false;
+    
     this.promptInput.focus();
     this.saveConversationHistory();
+    this.updateSessionTime();
+  }
+
+  async refreshContext() {
+    // Show loading state
+    const contextInfo = document.getElementById('contextInfo');
+    const refreshBtn = document.getElementById('refreshContextBtn');
+    
+    refreshBtn.textContent = '⏳';
+    refreshBtn.disabled = true;
+    contextInfo.textContent = 'Refreshing context...';
+
+    try {
+      // Force reload context
+      await this.loadContext();
+      
+      // Show success feedback
+      refreshBtn.textContent = '✅';
+      setTimeout(() => {
+        refreshBtn.textContent = '🔄';
+        refreshBtn.disabled = false;
+      }, 1000);
+      
+    } catch (error) {
+      console.error('Failed to refresh context:', error);
+      refreshBtn.textContent = '❌';
+      setTimeout(() => {
+        refreshBtn.textContent = '🔄';
+        refreshBtn.disabled = false;
+      }, 2000);
+    }
+  }
+
+  // 🎯 CONTEXTUAL QUICK ACTIONS - Dynamic suggestions based on page understanding
+  updateContextualQuickActions() {
+    if (!this.enhancedContext) return;
+
+    const { semanticComponents, conversationalContext, knowledgeContext } = this.enhancedContext;
+    const quickActionsContainer = document.querySelector('.quick-actions');
+    
+    if (!quickActionsContainer) return;
+
+    // Generate contextual quick actions based on page analysis
+    const contextualActions = this.generateContextualActions(semanticComponents, conversationalContext, knowledgeContext);
+    
+    // Update existing quick action buttons with contextual suggestions
+    const existingButtons = quickActionsContainer.querySelectorAll('.quick-action');
+    
+    contextualActions.forEach((action, index) => {
+      if (existingButtons[index]) {
+        existingButtons[index].textContent = action.text;
+        existingButtons[index].dataset.prompt = action.prompt;
+        existingButtons[index].title = action.description;
+      }
+    });
+  }
+
+  generateContextualActions(semanticComponents, conversationalContext, knowledgeContext) {
+    const actions = [];
+    const pageIntent = semanticComponents?.pageIntent;
+    const userLevel = conversationalContext?.userLevel;
+    const objectType = knowledgeContext?.objectType?.name;
+    const priorityFocus = conversationalContext?.priorityFocus || [];
+
+    // Generate actions based on page intent and user level
+    if (pageIntent === 'create' || pageIntent === 'edit') {
+      if (priorityFocus.includes('error-resolution')) {
+        actions.push({
+          text: "Fix Errors",
+          prompt: "Help me resolve the validation errors on this form",
+          description: "Get help with form validation errors"
+        });
+      }
+      
+      if (priorityFocus.includes('required-field-completion')) {
+        actions.push({
+          text: "Required Fields",
+          prompt: "What are the required fields and how should I fill them?",
+          description: "Guidance on completing required fields"
+        });
+      } else {
+        actions.push({
+          text: "Form Help",
+          prompt: "Help me complete this form correctly",
+          description: "Step-by-step form completion guidance"
+        });
+      }
+
+      if (objectType && objectType !== 'Unknown') {
+        actions.push({
+          text: `${objectType} Best Practices`,
+          prompt: `What are the best practices for creating/editing ${objectType} records?`,
+          description: `Learn best practices for ${objectType} management`
+        });
+      }
+    } else if (pageIntent === 'configure') {
+      actions.push({
+        text: "Setup Guidance",
+        prompt: "Explain this setup page and what I can configure here",
+        description: "Understand setup options and configurations"
+      });
+
+      actions.push({
+        text: "Best Practices",
+        prompt: "What are the best practices for this configuration?",
+        description: "Learn configuration best practices"
+      });
+
+      if (userLevel === 'beginner') {
+        actions.push({
+          text: "Step-by-Step",
+          prompt: "Walk me through this setup process step by step",
+          description: "Detailed setup instructions for beginners"
+        });
+      }
+    } else if (pageIntent === 'browse' || pageIntent === 'analyze') {
+      actions.push({
+        text: "Explain View",
+        prompt: "Explain what I'm looking at and what I can do here",
+        description: "Understand the current page and available actions"
+      });
+
+      actions.push({
+        text: "Navigation Help",
+        prompt: "How do I navigate from here to accomplish my goals?",
+        description: "Get navigation and workflow guidance"
+      });
+    } else {
+      // Default actions for unknown contexts
+      actions.push({
+        text: "Page Overview",
+        prompt: "Explain what I can do on this page",
+        description: "Get an overview of page functionality"
+      });
+
+      actions.push({
+        text: "Next Steps",
+        prompt: "What should I do next?",
+        description: "Get suggestions for next actions"
+      });
+    }
+
+    // Add error-specific action if errors are present
+    if (priorityFocus.includes('error-resolution') && actions.length < 3) {
+      actions.push({
+        text: "Troubleshoot",
+        prompt: "Help me troubleshoot the issues on this page",
+        description: "Get help resolving current issues"
+      });
+    }
+
+    // Ensure we have at least 3 actions, pad with generic ones if needed
+    while (actions.length < 3) {
+      actions.push({
+        text: "Ask Question",
+        prompt: "I have a question about this page",
+        description: "Ask any question about the current context"
+      });
+    }
+
+    return actions.slice(0, 3); // Return max 3 actions
   }
 
   clearConversationHistory() {
@@ -379,9 +836,13 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     
     this.saveConversationHistory();
     
+    // Update session time on user activity
+    this.updateSessionTime();
+    
     if (this.currentConversation.length > 1) {
       this.showConversationThread();
-      this.renderConversationThread();
+      // Scroll to bottom for new messages so user can see their new question/answer
+      this.renderConversationThread(true);
     }
   }
 
@@ -426,27 +887,63 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
     const content = contextData?.content || {};
     const storage = contextData?.storage || {};
     const enhanced = contextData?.enhanced || false;
+    const pageStructure = contextData?.pageStructure || {};
+    const semanticComponents = contextData?.semanticComponents || {};
+    const conversationalContext = contextData?.conversationalContext || {};
+    const knowledgeContext = contextData?.knowledgeContext || {};
 
-    let prompt = `You are Salesforce Advisor, an expert AI assistant. This is a continuing conversation. Use the conversation history to provide contextual responses.
+    let prompt = `You are Salesforce Advisor, an expert AI assistant with advanced contextual understanding. This is a continuing conversation. Use the conversation history and deep page analysis to provide highly contextual responses.
 
-CURRENT CONTEXT:
+🧠 CURRENT PAGE ANALYSIS:
 - Page Type: ${context.pageType || 'Unknown'}
-- Object: ${context.currentObject || 'Not detected'}
+- Page Header: "${context.pageHeader || 'Not detected'}"
+- Primary Content: ${semanticComponents.primaryContent || 'Unknown'}
+- Page Purpose: ${conversationalContext.pageSpecificContext?.purpose || 'Not specified'}
 - Interface: ${context.userInterface || 'Unknown'}
-- URL: ${context.url || 'Not available'}
-- Errors: ${context.errors?.length || 0} detected`;
+- Available Actions: ${semanticComponents.availableActions?.slice(0, 5).join(', ') || 'None detected'}
+- Errors: ${context.errors?.length || 0} detected
 
-    // Add enhanced context if available
-    if (enhanced && context.urlMetadata) {
-      const meta = context.urlMetadata;
+🎯 CONTENT FOCUS:
+- Main Content Area: ${context.mainContentSummary?.keyTerms?.join(', ') || 'General interface'}
+- Visible Elements: ${context.visibleElements?.join(', ') || 'Standard UI'}
+- Page Intent: ${semanticComponents.pageIntent || 'View'}`;
+
+    // Add enhanced contextual understanding
+    if (enhanced && pageStructure.layout) {
       prompt += `
 
-ADVANCED URL ANALYSIS:
-- Action: ${meta.action || 'view'}
-- Record ID: ${meta.recordId || 'None'}
-- Object Type: ${meta.objectType || 'Unknown'}
-- Mode: ${meta.mode || 'view'}
-- App Context: ${meta.app || 'Standard'}`;
+📊 PAGE STRUCTURE ANALYSIS:
+- Layout Type: ${pageStructure.layout.pageType || 'Unknown'}
+- Sections: ${pageStructure.layout.sections?.length || 0}
+- Modals Open: ${pageStructure.layout.modals?.length || 0}
+- Navigation Depth: ${pageStructure.navigation?.breadcrumbs?.length || 0}`;
+    }
+
+    if (enhanced && semanticComponents.functionalGroups) {
+      const groups = semanticComponents.functionalGroups;
+      prompt += `
+
+🔍 FUNCTIONAL ANALYSIS:
+- Data Entry Groups: ${groups.dataEntry?.length || 0}
+- Action Groups: ${groups.actions?.length || 0}
+- Information Groups: ${groups.information?.length || 0}`;
+    }
+
+    if (enhanced && knowledgeContext.objectType) {
+      prompt += `
+
+📚 SALESFORCE KNOWLEDGE CONTEXT:
+- Object Type: ${knowledgeContext.objectType.name} (${knowledgeContext.objectType.type})
+- Setup Area: ${knowledgeContext.setupArea?.name || 'Unknown'}
+- Common Issues: ${knowledgeContext.commonIssues?.length || 0} identified
+- Best Practices Available: ${knowledgeContext.bestPractices?.length || 0}`;
+    }
+
+    if (enhanced && conversationalContext.priorityFocus) {
+      prompt += `
+
+🎯 PRIORITY FOCUS AREAS:
+${conversationalContext.priorityFocus.map(focus => `- ${focus}`).join('\n')}`;
     }
 
     // Add conversation history
@@ -472,23 +969,94 @@ CURRENT ERRORS:
 ${context.errors.map(err => `- ${err.type}: ${err.message}`).join('\n')}`;
     }
 
+    // Enhanced form field analysis with semantic understanding
     if (content.fields?.length > 0) {
       prompt += `
 
-VISIBLE FIELDS:
-${content.fields.slice(0, 10).map(field => `- ${field.label} (${field.type}${field.required ? ', required' : ''})`).join('\n')}`;
+📝 INTELLIGENT FORM ANALYSIS (${content.fields.length} total fields):`;
+      
+      // Group fields by sections if available
+      if (pageStructure.interactions?.forms?.length > 0) {
+        const forms = pageStructure.interactions.forms;
+        forms.forEach(form => {
+          if (form.sections?.length > 0) {
+            form.sections.forEach(section => {
+              prompt += `\n\n${section.title} Section (${section.fieldCount} fields):`;
+              section.fields.slice(0, 8).forEach(field => {
+                prompt += `\n  - ${field.label} (${field.type}${field.required ? ', REQUIRED' : ''}${field.hasValue ? ', filled' : ', empty'}${field.hasError ? ', ERROR' : ''})`;
+              });
+            });
+          }
+        });
+        
+        // Add completion analysis
+        const totalFields = forms.reduce((sum, form) => sum + form.totalFields, 0);
+        const completedFields = forms.reduce((sum, form) => sum + form.completedFields, 0);
+        const requiredFields = forms.reduce((sum, form) => sum + form.requiredFields, 0);
+        const errors = forms.reduce((sum, form) => sum + form.validationErrors, 0);
+        
+        prompt += `\n\n📊 FORM COMPLETION STATUS:
+- Progress: ${completedFields}/${totalFields} fields completed (${Math.round((completedFields/totalFields)*100)}%)
+- Required: ${requiredFields} required fields
+- Validation Errors: ${errors}`;
+      } else {
+        // Fallback to simple field listing
+        content.fields.slice(0, 15).forEach(field => {
+          prompt += `\n- ${field.label} (${field.type}${field.required ? ', REQUIRED' : ''}${field.value ? ', has value' : ', empty'})`;
+        });
+      }
+    }
+
+    // Add visible buttons with context
+    if (content.buttons?.length > 0) {
+      prompt += `\n\nAVAILABLE ACTIONS:\n${content.buttons.slice(0, 8).map(btn => `- ${btn}`).join('\n')}`;
+    }
+
+    // Add intelligent contextual guidance based on knowledge matching
+    if (knowledgeContext.bestPractices?.length > 0) {
+      prompt += `\n\n💡 RELEVANT BEST PRACTICES:
+${knowledgeContext.bestPractices.slice(0, 3).map(practice => `- ${practice}`).join('\n')}`;
+    }
+
+    if (knowledgeContext.commonIssues?.length > 0) {
+      prompt += `\n\n⚠️ COMMON ISSUES TO WATCH FOR:
+${knowledgeContext.commonIssues.map(issue => `- ${issue.description} (${issue.severity} priority)`).join('\n')}`;
+    }
+
+    if (knowledgeContext.nextSteps?.length > 0) {
+      prompt += `\n\n🎯 SUGGESTED NEXT STEPS:
+${knowledgeContext.nextSteps.map(step => `- ${step}`).join('\n')}`;
+    }
+
+    // Add conversational framing guidance
+    if (conversationalContext.suggestedQuestions?.length > 0) {
+      prompt += `\n\n❓ USERS OFTEN ASK:
+${conversationalContext.suggestedQuestions.slice(0, 3).map(q => `- "${q}"`).join('\n')}`;
     }
 
     prompt += `
 
 CURRENT USER MESSAGE: ${userPrompt}
 
-Please provide a helpful response that:
-1. Considers the conversation history and context
-2. Addresses the current question directly
-3. References previous discussion when relevant
-4. Provides specific Salesforce guidance
-5. Maintains conversation continuity
+🎯 RESPONSE INSTRUCTIONS:
+You are analyzing the MAIN CONTENT of the current Salesforce page, NOT the navigation header. Focus specifically on what the user is actually working with.
+
+CURRENT USER MESSAGE: ${userPrompt}
+
+CRITICAL: Base your response on the PRIMARY CONTENT AREA:
+- Page Header: "${context.pageHeader || 'Unknown'}"
+- Main Content: ${semanticComponents.primaryContent || 'Unknown'}
+- Key Elements: ${context.mainContentSummary?.keyTerms?.join(', ') || 'None'}
+
+RESPONSE GUIDELINES:
+1. **FOCUS ON MAIN CONTENT**: Ignore navigation bars, headers, and global UI elements
+2. **REFERENCE ACTUAL PAGE**: Talk about "${context.pageHeader}" specifically, not general navigation
+3. **USE VISIBLE ELEMENTS**: Reference the actual ${context.visibleElements?.join(', ') || 'interface elements'} the user sees
+4. **PROVIDE SPECIFIC HELP**: Give guidance relevant to ${conversationalContext.pageSpecificContext?.area || 'this page'}
+5. **ACTIONABLE ADVICE**: Suggest specific actions using the available: ${semanticComponents.availableActions?.slice(0, 3).join(', ') || 'interface options'}
+
+DO NOT discuss global navigation, headers, or general Salesforce interface unless specifically asked.
+FOCUS ON: The specific ${context.pageType} content and functionality.
 
 Response:`;
 
@@ -510,15 +1078,21 @@ Response:`;
 
     const modelToUse = modelOverride || fallbackModels[0];
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify({
-        model: modelToUse,
-        messages: [
-          {
-            role: 'system',
-            content: `You are Salesforce Advisor, a professional Salesforce expert assistant and copilot. Provide helpful, specific, and actionable advice with the expertise of a seasoned Salesforce architect.
+    // Create AbortController for timeout handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: headers,
+        signal: controller.signal,
+        body: JSON.stringify({
+          model: modelToUse,
+          messages: [
+            {
+              role: 'system',
+              content: `You are Salesforce Advisor, a professional Salesforce expert assistant and copilot. Provide helpful, specific, and actionable advice with the expertise of a seasoned Salesforce architect.
 
 FORMATTING GUIDELINES:
 - Use proper headers (### for main sections, ## for subsections)
@@ -530,16 +1104,28 @@ FORMATTING GUIDELINES:
 - Keep responses well-structured and professional
 - Use clear, actionable language
 - Reference Salesforce best practices and Trailhead resources when relevant`
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7
-      })
-    });
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 1000,
+          temperature: 0.7
+        })
+      });
+
+      clearTimeout(timeoutId);
+      return response;
+      
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout - please try again');
+      }
+      throw error;
+    }
 
     if (!response.ok) {
       const error = await response.json();
@@ -560,6 +1146,26 @@ FORMATTING GUIDELINES:
     }
 
     return response;
+  }
+
+  async callAIWithRetry(prompt, maxRetries = 2) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 1) {
+          this.setLoading(true, `Retrying... (${attempt}/${maxRetries})`);
+        }
+        return await this.callAI(prompt);
+      } catch (error) {
+        if (error.message.includes('timeout') && attempt < maxRetries) {
+          console.log(`AI request timeout, retrying... (attempt ${attempt + 1}/${maxRetries})`);
+          this.setLoading(true, `Request timeout, retrying... (${attempt + 1}/${maxRetries})`);
+          // Wait a bit before retrying
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          continue;
+        }
+        throw error; // Re-throw if not a timeout or max retries reached
+      }
+    }
   }
 
   async callAI(prompt) {
@@ -598,6 +1204,18 @@ ${this.generateContextualHelp(prompt)}`;
         const response = await this.makeOpenRouterRequest(settings, prompt, headers);
 
         const data = await response.json();
+        
+        // Validate OpenRouter response structure
+        if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+          console.error('Invalid OpenRouter response:', data);
+          throw new Error('Invalid API response structure');
+        }
+        
+        if (!data.choices[0].message || !data.choices[0].message.content) {
+          console.error('No content in OpenRouter response:', data.choices[0]);
+          throw new Error('No content in API response');
+        }
+        
         return data.choices[0].message.content;
       }
 
@@ -643,6 +1261,18 @@ FORMATTING GUIDELINES:
         }
 
         const data = await response.json();
+        
+        // Validate OpenAI response structure
+        if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+          console.error('Invalid OpenAI response:', data);
+          throw new Error('Invalid API response structure');
+        }
+        
+        if (!data.choices[0].message || !data.choices[0].message.content) {
+          console.error('No content in OpenAI response:', data.choices[0]);
+          throw new Error('No content in API response');
+        }
+        
         return data.choices[0].message.content;
       }
 
@@ -675,20 +1305,63 @@ FORMATTING GUIDELINES:
         }
 
         const data = await response.json();
+        
+        // Validate Azure response structure
+        if (!data || !data.choices || !Array.isArray(data.choices) || data.choices.length === 0) {
+          console.error('Invalid Azure response:', data);
+          throw new Error('Invalid API response structure');
+        }
+        
+        if (!data.choices[0].message || !data.choices[0].message.content) {
+          console.error('No content in Azure response:', data.choices[0]);
+          throw new Error('No content in API response');
+        }
+        
         return data.choices[0].message.content;
       }
 
     } catch (error) {
       console.error('AI API Error:', error);
 
-      // Fallback to rule-based help with error info
-      return `⚠️ AI Service Error: ${error.message}
+      // Provide helpful error messages based on error type
+      let errorMessage = '';
+      if (error.message.includes('timeout')) {
+        errorMessage = `⏱️ Request Timeout
+
+The AI service is taking longer than usual to respond. This can happen during high usage periods.
+
+**What you can try:**
+- Wait a moment and try again
+- Try a shorter, more specific question
+- Check your internet connection
+
+Here's some contextual help while we resolve the connection:
+
+${this.generateContextualHelp(prompt)}`;
+      } else if (error.message.includes('API key')) {
+        errorMessage = `🔑 API Key Issue
+
+${error.message}
+
+**To fix this:**
+1. Click the extension icon → Options
+2. Add a valid OpenRouter API key
+3. Try again
+
+Meanwhile, here's some general help:
+
+${this.generateContextualHelp(prompt)}`;
+      } else {
+        errorMessage = `⚠️ AI Service Error: ${error.message}
 
 Here's some contextual help while we resolve the AI connection:
 
 ${this.generateContextualHelp(prompt)}
 
 💡 Tip: Check your API key and internet connection, then try again.`;
+      }
+      
+      return errorMessage;
     }
 
     // Fallback if no provider configured
@@ -757,7 +1430,8 @@ Need more specific help? Try describing your exact issue or what you're trying t
     
     // If we have a conversation thread, update it; otherwise use response area
     if (this.currentConversation.length > 1) {
-      this.renderConversationThread();
+      // Scroll to bottom when showing new responses so user can see the latest answer
+      this.renderConversationThread(true);
     } else {
       this.responseArea.innerHTML = formattedHtml;
       this.responseArea.scrollTop = 0;
@@ -814,11 +1488,11 @@ Need more specific help? Try describing your exact issue or what you're trying t
     return formatted;
   }
 
-  setLoading(isLoading) {
+  setLoading(isLoading, message = 'Analyzing...') {
     if (isLoading) {
       this.analyzeBtn.disabled = true;
-      this.analyzeBtn.textContent = 'Analyzing...';
-      this.responseArea.innerHTML = '<div class="loading">🤔 Analyzing your Salesforce context...</div>';
+      this.analyzeBtn.textContent = message;
+      this.responseArea.innerHTML = `<div class="loading">🤔 ${message}</div>`;
     } else {
       this.analyzeBtn.disabled = false;
       this.analyzeBtn.textContent = 'Send Message';

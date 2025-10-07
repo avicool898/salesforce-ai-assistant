@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesforce AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #0176d3, #00a1e0);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .tab-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            background: rgba(1, 118, 211, 0.1);
+            color: #0176d3;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(1, 118, 211, 0.2);
+        }
+
+        .tab-btn.active {
+            background: #0176d3;
+            color: white;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            padding: 2rem;
+            gap: 2rem;
+        }
+
+        .context-panel {
+            width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+            position: sticky;
+            top: 2rem;
+        }
+
+        .context-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .context-content {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #555;
+            white-space: pre-line;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .chat-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 8rem);
+        }
+
+        .chat-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            color: #666;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            border-color: #0176d3;
+            color: #0176d3;
+        }
+
+        .messages-container {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            display: flex;
+            gap: 1rem;
+            max-width: 80%;
+        }
+
+        .message.user {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #0176d3;
+            color: white;
+        }
+
+        .message.assistant .message-avatar {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .message-content {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+
+        .message.user .message-content {
+            background: #0176d3;
+            color: white;
+        }
+
+        .input-container {
+            padding: 1.5rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .quick-action {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            color: #666;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .quick-action:hover {
+            border-color: #0176d3;
+            color: #0176d3;
+            background: rgba(1, 118, 211, 0.05);
+        }
+
+        .input-area {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        #promptInput {
+            width: 100%;
+            min-height: 50px;
+            max-height: 150px;
+            padding: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        #promptInput:focus {
+            outline: none;
+            border-color: #0176d3;
+        }
+
+        #analyzeBtn {
+            padding: 1rem 2rem;
+            background: #0176d3;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 120px;
+        }
+
+        #analyzeBtn:hover {
+            background: #0056b3;
+            transform: translateY(-1px);
+        }
+
+        #analyzeBtn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #666;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #0176d3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .welcome-message h3 {
+            font-size: 24px;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .welcome-message p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .context-loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        @media (max-width: 1024px) {
+            .main-container {
+                flex-direction: column;
+                padding: 1rem;
+            }
+
+            .context-panel {
+                width: 100%;
+                position: static;
+            }
+
+            .chat-container {
+                height: 70vh;
+            }
+        }
+
+        .response-content {
+            line-height: 1.6;
+        }
+
+        .response-content h1, .response-content h2, .response-content h3 {
+            margin: 1rem 0 0.5rem 0;
+            color: #333;
+        }
+
+        .response-content ul, .response-content ol {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .response-content li {
+            margin: 0.25rem 0;
+        }
+
+        .response-content code {
+            background: rgba(0, 0, 0, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .response-content strong {
+            font-weight: 600;
+            color: #0176d3;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">SA</div>
+            <div>
+                <div class="title">Salesforce AI Assistant</div>
+                <div class="subtitle">Your Intelligent Salesforce Copilot</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="tab-controls">
+                <button class="tab-btn active" id="chatTab">💬 Chat</button>
+                <button class="tab-btn" id="historyTab">📜 History</button>
+                <button class="tab-btn" id="settingsTab">⚙️ Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="context-panel">
+            <div class="context-title">
+                🧠 Page Context
+                <button class="action-btn" id="refreshContext" title="Refresh Context">🔄</button>
+            </div>
+            <div class="context-content" id="contextInfo">
+                <div class="context-loading">
+                    <div class="spinner"></div>
+                    <span>Loading page context...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-header">
+                <div class="chat-title">Current Conversation</div>
+                <div class="chat-actions">
+                    <button class="action-btn" id="newConversationBtn">✨ New Chat</button>
+                    <button class="action-btn" id="exportBtn">📤 Export</button>
+                </div>
+            </div>
+
+            <div class="messages-container" id="messagesContainer">
+                <div class="welcome-message">
+                    <h3>👋 Welcome to Salesforce AI Assistant</h3>
+                    <p>I'm here to help you navigate and work with Salesforce more effectively. I can analyze your current page, help with forms, explain features, and provide best practices guidance.</p>
+                    <p>Start by asking a question or use one of the quick actions below!</p>
+                </div>
+            </div>
+
+            <div class="input-container">
+                <div class="quick-actions" id="quickActions">
+                    <button class="quick-action" data-prompt="Explain what I can do on this page">📖 Explain Page</button>
+                    <button class="quick-action" data-prompt="Help me complete this form correctly">📝 Form Help</button>
+                    <button class="quick-action" data-prompt="What are the best practices for this task?">💡 Best Practices</button>
+                    <button class="quick-action" data-prompt="What should I do next?">🎯 Next Steps</button>
+                </div>
+
+                <div class="input-area">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="promptInput" 
+                            placeholder="Ask me anything about this Salesforce page or describe what you need help with..."
+                            rows="1"
+                        ></textarea>
+                    </div>
+                    <button id="analyzeBtn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="src/js/privacy-filter.js"></script>
+    <script src="src/js/tab.js"></script>
+</body>
+</html>
