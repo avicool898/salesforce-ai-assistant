@@ -137,6 +137,11 @@ ${context.errors.length > 0 ? `⚠️ ${context.errors.length} error(s) detected
       window.close();
     });
 
+    // Open as Tab button
+    document.getElementById('openTabBtn').addEventListener('click', () => {
+      this.openAsTab();
+    });
+
     // Clear history button
     this.clearHistoryBtn.addEventListener('click', () => {
       this.clearConversationHistory();
@@ -951,6 +956,25 @@ You're in **Salesforce Flow Builder** (Lightning Experience), which is perfect f
 - [Lead Object Reference](https://help.salesforce.com/s/articleView?id=sf.leads_fields.htm&type=5)`;
 
     this.showResponse(sampleResponse);
+  }
+  async openAsTab() {
+    try {
+      // Get the active tab
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      
+      // Send message to show overlay on the current Salesforce page
+      await chrome.tabs.sendMessage(tab.id, { action: 'showOverlay' });
+      
+      // Close the popup
+      window.close();
+    } catch (error) {
+      console.error('Error opening overlay:', error);
+      // Fallback: open as separate tab if overlay fails
+      chrome.tabs.create({
+        url: chrome.runtime.getURL('src/tab.html')
+      });
+      window.close();
+    }
   }
 }
 

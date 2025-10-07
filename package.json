@@ -1,6 +1,6 @@
 {
   "name": "salesforce-advisor",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Your intelligent Salesforce copilot for enhanced productivity and expert guidance",
   "main": "src/manifest.json",
   "scripts": {

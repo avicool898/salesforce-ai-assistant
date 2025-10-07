@@ -15,7 +15,7 @@
     "https://*.lightning.force.com/*"
   ],
   "background": {
-    "service_worker": "js/background.js"
+    "service_worker": "js/background-new.js"
   },
   "content_scripts": [
     {
@@ -24,7 +24,7 @@
         "https://*.force.com/*",
         "https://*.lightning.force.com/*"
       ],
-      "js": ["js/privacy-filter.js", "js/content.js"],
+      "js": ["js/privacy-filter.js", "js/content-new.js"],
       "run_at": "document_idle"
     }
   ],
@@ -32,12 +32,18 @@
     "default_title": "Salesforce Advisor - Your Salesforce Copilot"
   },
   "side_panel": {
-    "default_path": "sidepanel.html"
+    "default_path": "sidepanel-new.html"
   },
   "options_page": "options.html",
   "icons": {
     "16": "icons/SA logo.png",
     "48": "icons/SA logo.png",
     "128": "icons/SA logo.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["generate-pdf-guide.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
